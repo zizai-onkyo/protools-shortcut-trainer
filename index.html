@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">   <!-- β公開中：検索避け -->
+<title>Pro Tools ショートカット トレーナー</title>
+<style>
+  :root{--ink:#22282c;--soft:#6b7276;--accent:#0e6b66;--accent-l:#e0efed;--line:#dcdfe0;
+    --bg:#fbfcfc;--ok:#12805a;--ng:#c0392b;--gold:#c77a0f}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:34px 22px 60px}
+  h1{font-size:26px;margin:0 0 6px} h2{font-size:15px;margin:0 0 12px;color:var(--accent)}
+  .sub{color:var(--soft);font-size:13px;margin:0 0 24px;line-height:1.8}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:14px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  button{font:inherit;padding:10px 18px;border-radius:9px;border:1px solid var(--line);background:#fff;cursor:pointer}
+  button:hover{background:#f2f5f5}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700;padding:13px 30px;font-size:16px}
+  button.primary:hover{filter:brightness(1.08)}
+  button.sel{background:var(--accent-l);border-color:var(--accent);color:var(--accent);font-weight:700}
+  label{display:flex;gap:8px;align-items:center;margin:8px 0;font-size:14px}
+  .muted{color:var(--soft);font-size:13px;line-height:1.8}
+  .k{display:inline-flex;align-items:center;justify-content:center;min-width:30px;padding:5px 10px;
+    border:1px solid #9aa2a6;border-radius:6px;background:#fff;font-weight:700;font-size:17px;
+    box-shadow:0 1px 0 rgba(0,0,0,.06)}
+  .k.big{min-width:clamp(38px,5vw,52px);padding:10px 18px;font-size:clamp(20px,3vw,28px);border-radius:9px}
+  .sep{color:var(--soft)}
+  /* ゲーム画面 */
+  #play{display:none;position:fixed;inset:0;background:var(--bg);z-index:10;
+    flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center}
+  #play.on{display:flex}
+  .hud{position:fixed;top:0;left:0;right:0;padding:14px 22px;display:flex;justify-content:space-between;
+    align-items:center;font-size:14px;color:var(--soft)}
+  .score{font-size:26px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+  .combo{color:var(--gold);font-weight:700}
+  .timebar{position:fixed;top:0;left:0;right:0;height:5px;background:#e7eaea}
+  .timebar > i{display:block;height:100%;background:var(--accent);width:100%}
+  .timebar.warn > i{background:var(--ng)}
+  .qcat{color:var(--accent);font-size:clamp(12px,1.6vw,14px);font-weight:700;letter-spacing:.05em}
+  .qact{font-size:clamp(22px,4.2vw,40px);font-weight:700;margin:14px 0 8px;max-width:min(820px,92vw);line-height:1.4}
+  .qnote{color:var(--soft);font-size:14px;max-width:640px;min-height:22px}
+  .mods{display:flex;gap:12px;margin-top:38px}
+  .mod{width:clamp(42px,7vw,56px);height:clamp(36px,5.6vw,46px);border-radius:9px;border:1.5px solid var(--line);color:#b7bec1;
+    display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;background:#fff}
+  .mod.on{border-color:var(--accent);background:var(--accent);color:#fff}
+  .verdict{min-height:64px;margin-top:26px;font-size:19px;font-weight:700}
+  .verdict.ok{color:var(--ok)} .verdict.ng{color:var(--ng)}
+  .answer{margin-top:8px;display:flex;gap:7px;align-items:center;justify-content:center}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:middle}
+  th{background:var(--accent-l);color:var(--accent);font-size:12px}
+  .big{font-size:40px;font-weight:700}
+  .stat{display:flex;gap:26px;flex-wrap:wrap;margin:6px 0 4px}
+  .stat div span{display:block;color:var(--soft);font-size:12px}
+  .chk{font-size:13px;padding:3px 9px;border-radius:999px;display:inline-block}
+  .banner{border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:14px;line-height:1.8}
+  .banner.warn{background:#fdf4e6;border:1px solid #ecd3a6;color:#8a5a12}
+  .banner.stop{background:#fdeceb;border:1px solid #f0c4bf;color:#a5342a}
+  .banner b{font-weight:700}
+  .chk.y{background:#e3f3ec;color:var(--ok)} .chk.n{background:#fbe8e5;color:var(--ng)}
+</style>
+</head>
+<body>
+<div class="wrap" id="home">
+  <h1>Pro Tools ショートカット トレーナー</h1>
+  <p class="sub">機能名が出るので、対応するショートカットを実際に押してください。<br>
+    Chrome / Edge で全画面にすると、⌘+N などブラウザに取られるキーも判定できます。</p>
+  <div id="warn"></div>
+
+  <div class="card">
+    <h2>出題範囲</h2>
+    <div class="row" id="modes"></div>
+    <div class="row" style="margin-top:12px" id="catrow"></div>
+  </div>
+
+  <div class="card">
+    <h2>設定</h2>
+    <label><input type="checkbox" id="weighted" checked> 重要度 ◎ の問題を多めに出す（△ はほとんど出しません）</label>
+    <label><input type="checkbox" id="nocmd"> ⌘ を使う問題を除く（Chrome / Edge 以外で遊ぶとき）</label>
+    <label><input type="checkbox" id="uselock" checked> Keyboard Lock を使う（推奨）</label>
+    <label><input type="checkbox" id="hasnumpad" checked> テンキーがある</label>
+    <label><input type="checkbox" id="showhint"> 3秒たったら答えを表示する（練習モード）</label>
+    <div class="muted" id="poolinfo" style="margin-top:8px"></div>
+  </div>
+
+  <div class="row"><button class="primary" id="start">スタート</button>
+    <span class="muted">1ラウンド20問／1問8秒</span></div>
+
+  <div id="resultbox" style="display:none;margin-top:22px"></div>
+  <div id="weakbox" style="display:none;margin-top:14px"></div>
+</div>
+
+<div id="play">
+  <div class="timebar"><i id="tbar"></i></div>
+  <div class="hud">
+    <div><span id="qnum"></span></div>
+    <div class="row" style="gap:20px">
+      <div class="combo" id="combo"></div>
+      <div class="score" id="score">0</div>
+    </div>
+  </div>
+  <div class="qcat" id="qcat"></div>
+  <div class="qact" id="qact"></div>
+  <div class="qnote" id="qnote"></div>
+  <div class="mods">
+    <div class="mod" data-m="Meta">⌘</div><div class="mod" data-m="Alt">⌥</div>
+    <div class="mod" data-m="Control">⌃</div><div class="mod" data-m="Shift">⇧</div>
+  </div>
+  <div class="verdict" id="verdict"></div>
+  <div style="position:fixed;bottom:22px"><button id="quit">やめる</button></div>
+</div>
+
+<script>
+const DATA = {"questions": [{"cat": "セッションとファイル", "sec": "新規・保存・終了", "key": "⌘ + N", "act": "新規セッションを作成", "note": "", "freq": "◎", "star": true, "mods": ["Meta"], "codes": ["KeyN"], "numpad": false}, {"cat": "セッションとファイル", "sec": "新規・保存・終了", "key": "⌘ + S", "act": "セッションを保存", "note": "⌘ + ⌃ + S で別名保存", "freq": "◎", "star": true, "mods": ["Meta"], "codes": ["KeyS"], "numpad": false}, {"cat": "セッションとファイル", "sec": "新規・保存・終了", "key": "⌘ + ⌃ + S", "act": "別名で保存", "note": "", "freq": "○", "star": false, "mods": ["Control", "Meta"], "codes": ["KeyS"], "numpad": false}, {"cat": "セッションとファイル", "sec": "新規・保存・終了", "key": "⌘ + ⇧ + W", "act": "セッションを閉じる", "note": "⌘ + Q も同じ", "freq": "○", "star": false, "mods": ["Meta", "Shift"], "codes": ["KeyW"], "numpad": false}, {"cat": "セッションとファイル", "sec": "読み込み・書き出し", "key": "⌘ + ⇧ + I", "act": "オーディオをインポート", "note": "", "freq": "◎", "star": true, "mods": ["Meta", "Shift"], "codes": ["KeyI"], "numpad": false}, {"cat": "セッションとファイル", "sec": "読み込み・書き出し", "key": "⌥ + ⇧ + I", "act": "セッションをインポート", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Shift"], "codes": ["KeyI"], "numpad": false}, {"cat": "セッションとファイル", "sec": "読み込み・書き出し", "key": "⌘ + ⌥ + ⇧ + I", "act": "ビデオをインポート", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Meta", "Shift"], "codes": ["KeyI"], "numpad": false}, {"cat": "セッションとファイル", "sec": "読み込み・書き出し", "key": "⌘ + ⇧ + K", "act": "オーディオクリップをエクスポート", "note": "", "freq": "◎", "star": true, "mods": ["Meta", "Shift"], "codes": ["KeyK"], "numpad": false}, {"cat": "セッションとファイル", "sec": "読み込み・書き出し", "key": "⌘ + ⌥ + B", "act": "MIX をバウンス", "note": "", "freq": "◎", "star": true, "mods": ["Alt", "Meta"], "codes": ["KeyB"], "numpad": false}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌘ + ⌥ + J", "act": "ウィンドウ構成リストを表示", "note": "", "freq": "◎", "star": true, "mods": ["Alt", "Meta"], "codes": ["KeyJ"], "numpad": false}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌘ + ＝", "act": "ミックスウィンドウ 切替", "note": "編集ウィンドウとの行き来", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["Equal"], "numpad": false}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌘ + テンキー2", "act": "セッション設定", "note": "", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["Numpad2"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌘ + テンキー5", "act": "メモリーロケーション", "note": "", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["Numpad5"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌘ + テンキー9", "act": "QuickTime (QT)", "note": "", "freq": "◎", "star": true, "mods": ["Meta"], "codes": ["Numpad9"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌘ + テンキー1", "act": "トランスポート ウィンドウ", "note": "", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["Numpad1"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌘ + テンキー3", "act": "ビッグカウンター", "note": "", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["Numpad3"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌘ + テンキー4", "act": "オートメーション ウィンドウ", "note": "", "freq": "◎", "star": true, "mods": ["Meta"], "codes": ["Numpad4"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌘ + テンキー7", "act": "ビデオユニバース", "note": "", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["Numpad7"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌘ + テンキー8", "act": "Beat Detective", "note": "", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["Numpad8"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌥ + テンキー1", "act": "時間操作", "note": "", "freq": "○", "star": false, "mods": ["Alt"], "codes": ["Numpad1"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌥ + テンキー2", "act": "テンポ操作", "note": "", "freq": "○", "star": false, "mods": ["Alt"], "codes": ["Numpad2"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌥ + テンキー3", "act": "イベント操作", "note": "", "freq": "○", "star": false, "mods": ["Alt"], "codes": ["Numpad3"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌥ + テンキー4", "act": "MIDI リアルタイムプロパティ", "note": "", "freq": "△", "star": false, "mods": ["Alt"], "codes": ["Numpad4"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌥ + テンキー5", "act": "エラスティックプロパティ ウィンドウ", "note": "", "freq": "△", "star": false, "mods": ["Alt"], "codes": ["Numpad5"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌥ + テンキー6", "act": "クリップエフェクト", "note": "", "freq": "○", "star": false, "mods": ["Alt"], "codes": ["Numpad6"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌥ + テンキー7", "act": "ユニバース", "note": "", "freq": "○", "star": false, "mods": ["Alt"], "codes": ["Numpad7"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌥ + テンキー8", "act": "ドックされた Melodyne を表示", "note": "Melodyne がある場合", "freq": "△", "star": false, "mods": ["Alt"], "codes": ["Numpad8"], "numpad": true}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌥ + \"", "act": "タスクマネージャー 表示/非表示", "note": "", "freq": "○", "star": false, "mods": ["Alt"], "codes": ["Quote"], "numpad": false}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌥ + I", "act": "新規ワークスペースウィンドウを作成", "note": "", "freq": "○", "star": false, "mods": ["Alt"], "codes": ["KeyI"], "numpad": false}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌥ + O", "act": "ワークスペースウィンドウ 表示/非表示", "note": "", "freq": "○", "star": false, "mods": ["Alt"], "codes": ["KeyO"], "numpad": false}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌥ + ;", "act": "次のワークスペースウィンドウを表示", "note": "", "freq": "△", "star": false, "mods": ["Alt"], "codes": ["Semicolon"], "numpad": false}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌘ + ⌥ + ⌃ + W", "act": "表示中の全ウィンドウ 表示/非表示", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Control", "Meta"], "codes": ["KeyW"], "numpad": false}, {"cat": "セッションとファイル", "sec": "ウィンドウ", "key": "⌃ + ⇧ + K", "act": "キーボードショートカット一覧を表示", "note": "", "freq": "○", "star": false, "mods": ["Control", "Shift"], "codes": ["KeyK"], "numpad": false}, {"cat": "モードとツール", "sec": "編集モード", "key": "F1", "act": "シャッフルモード", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["F1"], "numpad": false}, {"cat": "モードとツール", "sec": "編集モード", "key": "F2", "act": "スリップモード", "note": "通常はこれ", "freq": "◎", "star": true, "mods": [], "codes": ["F2"], "numpad": false}, {"cat": "モードとツール", "sec": "編集モード", "key": "F3", "act": "スポットモード", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["F3"], "numpad": false}, {"cat": "モードとツール", "sec": "編集モード", "key": "F4", "act": "グリッドモード", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["F4"], "numpad": false}, {"cat": "モードとツール", "sec": "編集ツール", "key": "F5", "act": "ズームツール", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["F5"], "numpad": false}, {"cat": "モードとツール", "sec": "編集ツール", "key": "F6", "act": "トリムツール", "note": "F6・F7・F8 のいずれかを同時押しでスマートツールに切り替わる", "freq": "◎", "star": true, "mods": [], "codes": ["F6"], "numpad": false}, {"cat": "モードとツール", "sec": "編集ツール", "key": "F7", "act": "セレクタツール", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["F7"], "numpad": false}, {"cat": "モードとツール", "sec": "編集ツール", "key": "F8", "act": "グラバーツール", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["F8"], "numpad": false}, {"cat": "モードとツール", "sec": "編集ツール", "key": "F9", "act": "スクラバーツール", "note": "", "freq": "○", "star": false, "mods": [], "codes": ["F9"], "numpad": false}, {"cat": "モードとツール", "sec": "編集ツール", "key": "F10", "act": "ペンシルツール", "note": "", "freq": "○", "star": false, "mods": [], "codes": ["F10"], "numpad": false}, {"cat": "トラック", "sec": "作成・複製・削除", "key": "⌘ + ⇧ + N", "act": "新規トラックを作成", "note": "", "freq": "◎", "star": true, "mods": ["Meta", "Shift"], "codes": ["KeyN"], "numpad": false}, {"cat": "トラック", "sec": "作成・複製・削除", "key": "⌘ + ← / →", "act": "トラックチャンネルを切替", "note": "新規トラックダイアログ内。mono / stereo など", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["ArrowLeft", "ArrowRight"], "numpad": false}, {"cat": "トラック", "sec": "作成・複製・削除", "key": "⌘ + ↑ / ↓", "act": "トラック属性を切替", "note": "新規トラックダイアログ内。Aux / master など", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["ArrowUp", "ArrowDown"], "numpad": false}, {"cat": "トラック", "sec": "作成・複製・削除", "key": "⌘ + ⇧ + ↓", "act": "作成するトラック数を増やす", "note": "新規トラックダイアログ内。同時に複数作るのに", "freq": "○", "star": false, "mods": ["Meta", "Shift"], "codes": ["ArrowDown"], "numpad": false}, {"cat": "トラック", "sec": "作成・複製・削除", "key": "⌘ + ⇧ + ↑", "act": "作成するトラック数を減らす", "note": "新規トラックダイアログ内", "freq": "○", "star": false, "mods": ["Meta", "Shift"], "codes": ["ArrowUp"], "numpad": false}, {"cat": "トラック", "sec": "作成・複製・削除", "key": "⌥ + ⇧ + D", "act": "選択トラックを複製", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Shift"], "codes": ["KeyD"], "numpad": false}, {"cat": "トラック", "sec": "ミュート・ソロ", "key": "⇧ + M", "act": "選択トラックをミュート", "note": "", "freq": "◎", "star": true, "mods": ["Shift"], "codes": ["KeyM"], "numpad": false}, {"cat": "トラック", "sec": "ミュート・ソロ", "key": "⇧ + S", "act": "選択トラックをソロ", "note": "", "freq": "◎", "star": true, "mods": ["Shift"], "codes": ["KeyS"], "numpad": false}, {"cat": "トラック", "sec": "ミュート・ソロ", "key": "⌘ + M", "act": "選択クリップをミュート", "note": "", "freq": "◎", "star": true, "mods": ["Meta"], "codes": ["KeyM"], "numpad": false}, {"cat": "トラック", "sec": "グループ", "key": "⌘ + G", "act": "トラックのグループを作成", "note": "", "freq": "◎", "star": true, "mods": ["Meta"], "codes": ["KeyG"], "numpad": false}, {"cat": "トラック", "sec": "グループ", "key": "⌘ + ⌃ + G", "act": "グループを変更", "note": "最初の group が出るので、他の group を変える場合は ID から選択する", "freq": "○", "star": false, "mods": ["Control", "Meta"], "codes": ["KeyG"], "numpad": false}, {"cat": "トラック", "sec": "グループ", "key": "⌘ + ⇧ + G", "act": "全てのグループを中断", "note": "", "freq": "◎", "star": true, "mods": ["Meta", "Shift"], "codes": ["KeyG"], "numpad": false}, {"cat": "トラック", "sec": "グループ", "key": "⌘ + ⌥ + G", "act": "クリップでグループを組む", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Meta"], "codes": ["KeyG"], "numpad": false}, {"cat": "トラック", "sec": "グループ", "key": "⌘ + ⌥ + U", "act": "クリップグループを解除", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Meta"], "codes": ["KeyU"], "numpad": false}, {"cat": "トラック", "sec": "選択・スクロール", "key": "⌥ + ⌃ + P / ;", "act": "複数選択トラックを上/下のトラックから解除", "note": "P（上）/ ;（下）", "freq": "△", "star": false, "mods": ["Alt", "Control"], "codes": ["KeyP", "Semicolon"], "numpad": false}, {"cat": "トラック", "sec": "選択・スクロール", "key": "⌘ + ⌥ + F", "act": "トラックへスクロール", "note": "", "freq": "△", "star": false, "mods": ["Alt", "Meta"], "codes": ["KeyF"], "numpad": false}, {"cat": "トラック", "sec": "選択・スクロール", "key": "⇧ + F", "act": "Folder 内 表示/非表示", "note": "", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["KeyF"], "numpad": false}, {"cat": "再生とロケート", "sec": "再生", "key": "space", "act": "再生 / 停止", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["Space"], "numpad": false}, {"cat": "再生とロケート", "sec": "再生", "key": "⌘ + ⇧ + L", "act": "ループ再生 切替", "note": "", "freq": "◎", "star": true, "mods": ["Meta", "Shift"], "codes": ["KeyL"], "numpad": false}, {"cat": "再生とロケート", "sec": "再生", "key": "⌃ + ⇧ + テンキー", "act": "再生しながら範囲選択", "note": "⇧ を離すと範囲選択のエンドになる。5 が通常速度、数字が離れるごとに速度が変化", "freq": "○", "star": false, "mods": ["Control", "Shift"], "codes": ["Numpad1", "Numpad2", "Numpad3", "Numpad4", "Numpad5", "Numpad6", "Numpad7", "Numpad8", "Numpad9"], "numpad": true}, {"cat": "再生とロケート", "sec": "再生", "key": "テンキー1（長押し）", "act": "巻き戻し", "note": "音は出ない", "freq": "○", "star": false, "mods": [], "codes": ["Numpad1"], "numpad": true}, {"cat": "再生とロケート", "sec": "再生", "key": "テンキー2（長押し）", "act": "早送り", "note": "音は出ない", "freq": "○", "star": false, "mods": [], "codes": ["Numpad2"], "numpad": true}, {"cat": "再生とロケート", "sec": "ロケート", "key": "return", "act": "セッションスタートに飛ぶ", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["Enter"], "numpad": false}, {"cat": "再生とロケート", "sec": "ロケート", "key": "⌥ + return", "act": "セッションエンドに飛ぶ", "note": "", "freq": "◎", "star": true, "mods": ["Alt"], "codes": ["Enter"], "numpad": false}, {"cat": "再生とロケート", "sec": "ロケート", "key": "⇧ + return", "act": "カーソル位置からセッションスタートまで囲う", "note": "", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["Enter"], "numpad": false}, {"cat": "再生とロケート", "sec": "ロケート", "key": "テンキー ＝", "act": "タイムコードを入力して移動", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["NumpadEqual"], "numpad": true}, {"cat": "再生とロケート", "sec": "ロケート", "key": "テンキー /", "act": "タイムフィールドを入力", "note": "スタート / エンド / 長さ を入力できる", "freq": "○", "star": false, "mods": [], "codes": ["NumpadDivide"], "numpad": true}, {"cat": "再生とロケート", "sec": "ロケート", "key": "Q", "act": "カーソル位置が画面センターになるよう表示", "note": "", "freq": "○", "star": false, "mods": [], "codes": ["KeyQ"], "numpad": false}, {"cat": "再生とロケート", "sec": "ロケート", "key": "N", "act": "『挿入位置は再生に従う』 入/切", "note": "再生後のカーソル位置が変わる", "freq": "○", "star": false, "mods": [], "codes": ["KeyN"], "numpad": false}, {"cat": "録音", "sec": "録音の準備", "key": "⇧ + R", "act": "選択トラックを録音スタンバイにする", "note": "", "freq": "◎", "star": true, "mods": ["Shift"], "codes": ["KeyR"], "numpad": false}, {"cat": "録音", "sec": "録音の準備", "key": "⇧ + I", "act": "選択トラックをインプット状態にする", "note": "", "freq": "◎", "star": true, "mods": ["Shift"], "codes": ["KeyI"], "numpad": false}, {"cat": "録音", "sec": "録音する", "key": "テンキー3", "act": "録音", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["Numpad3"], "numpad": true}, {"cat": "録音", "sec": "録音する", "key": "⌘ + ⇧ + P", "act": "パンチイン 入/切", "note": "テンキー6 でも可", "freq": "○", "star": false, "mods": ["Meta", "Shift"], "codes": ["KeyP"], "numpad": false}, {"cat": "録音", "sec": "録音する", "key": "⌥ + L", "act": "ループ Rec 切替", "note": "", "freq": "△", "star": false, "mods": ["Alt"], "codes": ["KeyL"], "numpad": false}, {"cat": "録音", "sec": "クリック・カウントオフ", "key": "テンキー7", "act": "クリック 入/切", "note": "", "freq": "○", "star": false, "mods": [], "codes": ["Numpad7"], "numpad": true}, {"cat": "録音", "sec": "クリック・カウントオフ", "key": "テンキー8", "act": "カウントオフ 入/切", "note": "", "freq": "○", "star": false, "mods": [], "codes": ["Numpad8"], "numpad": true}, {"cat": "録音", "sec": "プリ/ポストロール", "key": "⌘ + K", "act": "プリ/ポストロール 入/切", "note": "", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["KeyK"], "numpad": false}, {"cat": "表示とズーム", "sec": "横方向のズーム", "key": "T", "act": "編集画面を拡大", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["KeyT"], "numpad": false}, {"cat": "表示とズーム", "sec": "横方向のズーム", "key": "R", "act": "編集画面を縮小", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["KeyR"], "numpad": false}, {"cat": "表示とズーム", "sec": "横方向のズーム", "key": "1 〜 5", "act": "ズームメモリー（5段階）", "note": "キーボード上段の数字", "freq": "○", "star": false, "mods": [], "codes": ["Digit1", "Digit2", "Digit3", "Digit4", "Digit5"], "numpad": false}, {"cat": "表示とズーム", "sec": "横方向のズーム", "key": "⌥ + A", "act": "全てが表示される大きさに縮小", "note": "", "freq": "◎", "star": true, "mods": ["Alt"], "codes": ["KeyA"], "numpad": false}, {"cat": "表示とズーム", "sec": "横方向のズーム", "key": "⌥ + F", "act": "選択範囲が横画面いっぱいになるよう表示", "note": "", "freq": "○", "star": false, "mods": ["Alt"], "codes": ["KeyF"], "numpad": false}, {"cat": "表示とズーム", "sec": "横方向のズーム", "key": "E", "act": "ズーム切替", "note": "", "freq": "○", "star": false, "mods": [], "codes": ["KeyE"], "numpad": false}, {"cat": "表示とズーム", "sec": "横方向のズーム", "key": "⌥ + ⇧ + E", "act": "ズーム切替をキャンセル", "note": "", "freq": "△", "star": false, "mods": ["Alt", "Shift"], "codes": ["KeyE"], "numpad": false}, {"cat": "表示とズーム", "sec": "トラックの高さ", "key": "⌃ + ↑ / ↓", "act": "トラックの高さ 拡大/縮小", "note": "", "freq": "◎", "star": true, "mods": ["Control"], "codes": ["ArrowUp", "ArrowDown"], "numpad": false}, {"cat": "表示とズーム", "sec": "トラックの高さ", "key": "⌥ + ⌃ + ↑ / ↓", "act": "全トラックの高さ 拡大/縮小", "note": "", "freq": "◎", "star": true, "mods": ["Alt", "Control"], "codes": ["ArrowUp", "ArrowDown"], "numpad": false}, {"cat": "表示とズーム", "sec": "トラックの高さ", "key": "⌘ + ⌃ + ↑ / ↓", "act": "選択トラックのみ最大表示", "note": "", "freq": "◎", "star": true, "mods": ["Control", "Meta"], "codes": ["ArrowUp", "ArrowDown"], "numpad": false}, {"cat": "表示とズーム", "sec": "トラックの高さ", "key": "⌘ + ⌥ + ⌃ + ↑ / ↓", "act": "全トラックをウィンドウに合わせる", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Control", "Meta"], "codes": ["ArrowUp", "ArrowDown"], "numpad": false}, {"cat": "表示とズーム", "sec": "波形の表示", "key": "⌘ + ⌥ + [ / ]", "act": "波形の 拡大/縮小", "note": "⌥ + ⇧ + マウススクロールでもできる", "freq": "○", "star": false, "mods": ["Alt", "Meta"], "codes": ["BracketRight"], "numpad": false}, {"cat": "表示とズーム", "sec": "波形の表示", "key": "⌘ + ⌥ + ⌃ + [", "act": "波形の見え方を通常に戻す", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Control", "Meta"], "codes": ["BracketLeft"], "numpad": false}, {"cat": "表示とズーム", "sec": "ビューセレクター", "key": "−", "act": "選択オーディオトラックのビューを 波形/ボリューム で切替", "note": "− は 0 と ＝ の間のキー。ルーティングフォルダも切り替わる", "freq": "○", "star": false, "mods": [], "codes": ["Minus"], "numpad": false}, {"cat": "表示とズーム", "sec": "ビューセレクター", "key": "⌥ + −", "act": "全オーディオトラックのビューを 波形/ボリューム で切替", "note": "− は 0 と ＝ の間のキー。ルーティングフォルダも含まれる", "freq": "○", "star": false, "mods": ["Alt"], "codes": ["Minus"], "numpad": false}, {"cat": "表示とズーム", "sec": "ビューセレクター", "key": "⌘ + ⌃ + ← / →", "act": "選択トラックのビューセレクター 切替", "note": "", "freq": "○", "star": false, "mods": ["Control", "Meta"], "codes": ["ArrowLeft", "ArrowRight"], "numpad": false}, {"cat": "表示とズーム", "sec": "ビューセレクター", "key": "⌘ + ⌥ + ⌃ + ← / →", "act": "全トラックのビューセレクター 切替", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Control", "Meta"], "codes": ["ArrowLeft", "ArrowRight"], "numpad": false}, {"cat": "表示とズーム", "sec": "ビデオ", "key": "⌘ + ⇧ + J", "act": "ビデオオンライン", "note": "QT の ON/OFF", "freq": "○", "star": false, "mods": ["Meta", "Shift"], "codes": ["KeyJ"], "numpad": false}, {"cat": "表示とズーム", "sec": "ビデオ", "key": "⇧ + J", "act": "QT 切替", "note": "切替順は一番上から", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["KeyJ"], "numpad": false}, {"cat": "表示とズーム", "sec": "ビデオ", "key": "⌥ + ⇧ + L", "act": "Video Satellite のリンク 入/切", "note": "", "freq": "△", "star": false, "mods": ["Alt", "Shift"], "codes": ["KeyL"], "numpad": false}, {"cat": "編集の基本", "sec": "切り取り・コピー・ペースト", "key": "⌘ + X", "act": "切り取り", "note": "X のみでも可", "freq": "◎", "star": true, "mods": ["Meta"], "codes": ["KeyX"], "numpad": false}, {"cat": "編集の基本", "sec": "切り取り・コピー・ペースト", "key": "⌘ + C", "act": "コピー", "note": "C のみでも可", "freq": "◎", "star": true, "mods": ["Meta"], "codes": ["KeyC"], "numpad": false}, {"cat": "編集の基本", "sec": "切り取り・コピー・ペースト", "key": "⌘ + V", "act": "ペースト", "note": "V のみでも可", "freq": "◎", "star": true, "mods": ["Meta"], "codes": ["KeyV"], "numpad": false}, {"cat": "編集の基本", "sec": "切り取り・コピー・ペースト", "key": "⌘ + ⌥ + V", "act": "範囲内だけペースト", "note": "コピー範囲が狭いと範囲内で繰り返される", "freq": "○", "star": false, "mods": ["Alt", "Meta"], "codes": ["KeyV"], "numpad": false}, {"cat": "編集の基本", "sec": "カーソル移動・選択範囲", "key": "P / L / ; / \"", "act": "カーソルの移動", "note": "P（↑）/ L（←）/ ;（↓）/ \"（→）", "freq": "◎", "star": true, "mods": [], "codes": ["KeyP", "KeyL", "Semicolon", "Quote"], "numpad": false}, {"cat": "編集の基本", "sec": "カーソル移動・選択範囲", "key": "⌘ + A", "act": "選択トラックのクリップを全て囲う", "note": "", "freq": "◎", "star": true, "mods": ["Meta"], "codes": ["KeyA"], "numpad": false}, {"cat": "編集の基本", "sec": "カーソル移動・選択範囲", "key": "⌃ + tab", "act": "クリップ移動（後ろ）", "note": "⌘ + ⌃ + \" も同じ", "freq": "○", "star": false, "mods": ["Control"], "codes": ["Tab"], "numpad": false}, {"cat": "編集の基本", "sec": "カーソル移動・選択範囲", "key": "⌥ + ⌃ + tab", "act": "クリップ移動（前）", "note": "⌘ + ⌃ + L も同じ", "freq": "○", "star": false, "mods": ["Alt", "Control"], "codes": ["Tab"], "numpad": false}, {"cat": "編集の基本", "sec": "カーソル移動・選択範囲", "key": "⇧ + tab", "act": "カーソル位置から後方の基点まで選択範囲を広げる", "note": "", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["Tab"], "numpad": false}, {"cat": "編集の基本", "sec": "カーソル移動・選択範囲", "key": "⌥ + ⇧ + tab", "act": "カーソル位置から前方の基点まで選択範囲を広げる", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Shift"], "codes": ["Tab"], "numpad": false}, {"cat": "編集の基本", "sec": "カーソル移動・選択範囲", "key": "⌘ + 0", "act": "選択範囲内のクリップに選択範囲を合わせる", "note": "中途半端に囲ったクリップがあった場合、その中にフェードをかけていたらフェードが消える", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["Digit0"], "numpad": false}, {"cat": "編集の基本", "sec": "カーソル移動・選択範囲", "key": "⌘ + ⌥ + ⇧ + \"", "act": "編集選択範囲を縮小して 前 の編集へ", "note": "", "freq": "△", "star": false, "mods": ["Alt", "Meta", "Shift"], "codes": ["Quote"], "numpad": false}, {"cat": "編集の基本", "sec": "カーソル移動・選択範囲", "key": "⌘ + ⌥ + ⇧ + L", "act": "編集選択範囲を縮小して 後ろ の編集へ", "note": "", "freq": "△", "star": false, "mods": ["Alt", "Meta", "Shift"], "codes": ["KeyL"], "numpad": false}, {"cat": "編集の基本", "sec": "削除", "key": "A", "act": "カーソル位置から 前 を削除", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["KeyA"], "numpad": false}, {"cat": "編集の基本", "sec": "削除", "key": "S", "act": "カーソル位置から 後ろ を削除", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["KeyS"], "numpad": false}, {"cat": "編集の基本", "sec": "削除", "key": "⌘ + T", "act": "カーソル範囲前後のクリップを削除", "note": "", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["KeyT"], "numpad": false}, {"cat": "編集の基本", "sec": "削除", "key": "⌘ + ⇧ + U", "act": "クリップリストの未使用を選択", "note": "", "freq": "○", "star": false, "mods": ["Meta", "Shift"], "codes": ["KeyU"], "numpad": false}, {"cat": "編集の基本", "sec": "削除", "key": "⌘ + ⇧ + B", "act": "クリップリストで選択されたクリップを削除", "note": "", "freq": "○", "star": false, "mods": ["Meta", "Shift"], "codes": ["KeyB"], "numpad": false}, {"cat": "編集の基本", "sec": "フェード", "key": "D", "act": "カーソル位置までフェードイン", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["KeyD"], "numpad": false}, {"cat": "編集の基本", "sec": "フェード", "key": "G", "act": "カーソル位置からフェードアウト", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["KeyG"], "numpad": false}, {"cat": "編集の基本", "sec": "フェード", "key": "F", "act": "選択範囲にフェード（クロスフェード）をかける", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["KeyF"], "numpad": false}, {"cat": "編集の基本", "sec": "フェード", "key": "⌘ + F", "act": "フェードの掛け方を選択", "note": "", "freq": "◎", "star": true, "mods": ["Meta"], "codes": ["KeyF"], "numpad": false}, {"cat": "編集の基本", "sec": "分割・修復", "key": "B", "act": "クリップを分割", "note": "", "freq": "◎", "star": true, "mods": [], "codes": ["KeyB"], "numpad": false}, {"cat": "編集の基本", "sec": "分割・修復", "key": "⌘ + H", "act": "クリップの分割を修復", "note": "", "freq": "◎", "star": true, "mods": ["Meta"], "codes": ["KeyH"], "numpad": false}, {"cat": "編集の基本", "sec": "分割・修復", "key": "⌘ + U", "act": "ストリップサイレンス", "note": "", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["KeyU"], "numpad": false}, {"cat": "編集の基本", "sec": "ナッジ（微調整）", "key": "< / >", "act": "カーソル or クリップが 1つ分 移動", "note": "ナッジの数値で移動幅が変わる（テンキー1・2、もしくは ＋ − でも可）", "freq": "◎", "star": true, "mods": [], "codes": ["Comma", "Period"], "numpad": false}, {"cat": "編集の基本", "sec": "ナッジ（微調整）", "key": "M / ?", "act": "カーソル or クリップが大幅に移動", "note": "TC 29.97 = 5f / 23.976 = 6f（いずれもナッジが 1f のとき）", "freq": "◎", "star": true, "mods": [], "codes": ["KeyM", "Slash"], "numpad": false}, {"cat": "編集の基本", "sec": "ナッジ（微調整）", "key": "⇧ + ＋ / −", "act": "選択範囲を維持したまま前後にナッジ", "note": "幅はナッジ値に比例", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["NumpadAdd", "NumpadSubtract"], "numpad": true}, {"cat": "編集の基本", "sec": "ナッジ（微調整）", "key": "⌥ + ⌃ + ＋ / −", "act": "グリッド値の 上げ/下げ", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Control"], "codes": ["NumpadAdd", "NumpadSubtract"], "numpad": true}, {"cat": "編集の基本", "sec": "ナッジ（微調整）", "key": "⌘ + ⌥ + ＋ / −", "act": "ナッジ値の 上げ/下げ", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Meta"], "codes": ["NumpadAdd", "NumpadSubtract"], "numpad": true}, {"cat": "編集の基本", "sec": "取り消し", "key": "⌘ + Z", "act": "Undo（戻る）", "note": "Z のみでも可", "freq": "◎", "star": true, "mods": ["Meta"], "codes": ["KeyZ"], "numpad": false}, {"cat": "編集の基本", "sec": "取り消し", "key": "⇧ + Z", "act": "Redo（戻るの戻る）", "note": "", "freq": "◎", "star": true, "mods": ["Shift"], "codes": ["KeyZ"], "numpad": false}, {"cat": "編集の基本", "sec": "名前の変更", "key": "⌃ + ⇧ + R", "act": "クリップ名 一括変更", "note": "Only で名前を変える際にうまくいかない場合、自動作成にチェックが入っていないか、編集していない全く同じクリップが別にないか確認", "freq": "○", "star": false, "mods": ["Control", "Shift"], "codes": ["KeyR"], "numpad": false}, {"cat": "編集の基本", "sec": "名前の変更", "key": "⌥ + ⇧ + R", "act": "トラック名 一括変更", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Shift"], "codes": ["KeyR"], "numpad": false}, {"cat": "編集の基本", "sec": "名前の変更", "key": "⌘ + ⇧ + R", "act": "名前変更", "note": "選択範囲内の名前を続けて変更していく／表示は若い文字・数字から順番に", "freq": "○", "star": false, "mods": ["Meta", "Shift"], "codes": ["KeyR"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "シンクポイント", "key": "⌘ + <", "act": "シンクポイントを打つ", "note": "1クリップに 1箇所のみ", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["Comma"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "シンクポイント", "key": "J", "act": "シンクポイントをクリップ top に移動", "note": "", "freq": "○", "star": false, "mods": [], "codes": ["KeyJ"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "カーソル位置に合わせる", "key": "Y", "act": "選択クリップをセッションスタートへ", "note": "", "freq": "○", "star": false, "mods": [], "codes": ["KeyY"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "クリップの伸縮", "key": "⌘ + ⌃ + R", "act": "選択クリップの 前 を伸ばす", "note": "", "freq": "○", "star": false, "mods": ["Control", "Meta"], "codes": ["KeyR"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "クリップの伸縮", "key": "⌘ + ⌃ + Y", "act": "選択クリップの 後ろ を伸ばす", "note": "", "freq": "○", "star": false, "mods": ["Control", "Meta"], "codes": ["KeyY"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "クリップの伸縮", "key": "⌘ + ⌃ + T", "act": "選択クリップの 前後 を伸ばす", "note": "", "freq": "○", "star": false, "mods": ["Control", "Meta"], "codes": ["KeyT"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "クリップの伸縮", "key": "⌥ + ＋ / −", "act": "クリップ top を 伸ばす/縮める", "note": "幅はナッジ値に比例", "freq": "○", "star": false, "mods": ["Alt"], "codes": ["NumpadAdd", "NumpadSubtract"], "numpad": true}, {"cat": "クリップ操作（応用）", "sec": "クリップの伸縮", "key": "⌘ + ＋ / −", "act": "クリップ end を 伸ばす/縮める", "note": "幅はナッジ値に比例", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["NumpadAdd", "NumpadSubtract"], "numpad": true}, {"cat": "クリップ操作（応用）", "sec": "クリップの伸縮", "key": "⌃ + ＋ / −", "act": "クリップ内で波形を移動", "note": "移動幅はナッジ値に比例", "freq": "○", "star": false, "mods": ["Control"], "codes": ["NumpadAdd", "NumpadSubtract"], "numpad": true}, {"cat": "クリップ操作（応用）", "sec": "複製・ループ", "key": "⌘ + ⌥ + L", "act": "クリップをループ", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Meta"], "codes": ["KeyL"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "複製・ループ", "key": "⌥ + R", "act": "繰り返し", "note": "", "freq": "○", "star": false, "mods": ["Alt"], "codes": ["KeyR"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "複製・ループ", "key": "⌘ + ⌥ + ⇧ + D", "act": "複製して編集範囲を拡大", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Meta", "Shift"], "codes": ["KeyD"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "複製・ループ", "key": "K", "act": "選択範囲 end を選択範囲 top に移動", "note": "", "freq": "○", "star": false, "mods": [], "codes": ["KeyK"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "複製・ループ", "key": "⌥ + ⌃ + K", "act": "コピーしたクリップをクリップ top に移動", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Control"], "codes": ["KeyK"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "複製・ループ", "key": "⌘ + D", "act": "コピーしたクリップをクリップ end に移動", "note": "", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["KeyD"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "整列・クオンタイズ", "key": "⌥ + ⇧ + H", "act": "クリップ間スペース", "note": "囲っているクリップの間隔を均一にする", "freq": "○", "star": false, "mods": ["Alt", "Shift"], "codes": ["KeyH"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "整列・クオンタイズ", "key": "⌥ + 0", "act": "クオンタイズのメニュー 表示/非表示", "note": "", "freq": "△", "star": false, "mods": ["Alt"], "codes": ["Digit0"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "ロック", "key": "⌘ + L", "act": "クリップをロック", "note": "", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["KeyL"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "ロック", "key": "⌥ + ⌃ + L", "act": "クリップを時間でロック", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Control"], "codes": ["KeyL"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "クリップエフェクト", "key": "⌘ + ⌥ + ⌃ + C", "act": "クリップエフェクトをコピー", "note": "ペーストは ⌘ + V（または V）", "freq": "○", "star": false, "mods": ["Alt", "Control", "Meta"], "codes": ["KeyC"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "クリップエフェクト", "key": "⌘ + ⌥ + ⌃ + X", "act": "クリップエフェクトをカット", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Control", "Meta"], "codes": ["KeyX"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "クリップエフェクト", "key": "⌘ + ⌥ + ⌃ + B", "act": "選択範囲のクリップエフェクトをクリア", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Control", "Meta"], "codes": ["KeyB"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "その他", "key": "⌘ + ⌥ + ⌃ + L / \"", "act": "選択範囲分だけ選択範囲が 前後 に移動", "note": "L（前）/ \"（後ろ）", "freq": "△", "star": false, "mods": ["Alt", "Control", "Meta"], "codes": ["KeyL", "Quote"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "その他", "key": "⌘ + ⌥ + ⌃ + ⇧ + L / \"", "act": "選択範囲分だけ選択範囲を 倍/減 させる", "note": "L（減）/ \"（倍）", "freq": "△", "star": false, "mods": ["Alt", "Control", "Meta", "Shift"], "codes": ["KeyL", "Quote"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "その他", "key": "⌥ + ⌃ + ⇧ + 3", "act": "1K（基準信号）を作る", "note": "範囲を囲ってから", "freq": "○", "star": false, "mods": ["Alt", "Control", "Shift"], "codes": ["Digit3"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "その他", "key": "⌥ + ⇧ + 3", "act": "選択範囲を統合（コンソリデート）", "note": "", "freq": "◎", "star": true, "mods": ["Alt", "Shift"], "codes": ["Digit3"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "その他", "key": "⌥ + ⇧ + C", "act": "コミット", "note": "フリーズに近い", "freq": "△", "star": false, "mods": ["Alt", "Shift"], "codes": ["KeyC"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "その他", "key": "⌘ + ⇧ + M", "act": "ユーザータイムスタンプを変更", "note": "", "freq": "△", "star": false, "mods": ["Meta", "Shift"], "codes": ["KeyM"], "numpad": false}, {"cat": "クリップ操作（応用）", "sec": "その他", "key": "⌃ + ⇧ + A", "act": "Melodyne でクリップを編集", "note": "Melodyne がある場合", "freq": "△", "star": false, "mods": ["Control", "Shift"], "codes": ["KeyA"], "numpad": false}, {"cat": "メモリーロケーションとマーカー", "sec": "作成", "key": "Enter", "act": "メモリーロケーションを作成", "note": "テンキーの Enter", "freq": "◎", "star": true, "mods": [], "codes": ["NumpadEnter"], "numpad": true}, {"cat": "メモリーロケーションとマーカー", "sec": "作成", "key": "⌘ + Enter", "act": "選択トラックにメモリーロケーションを作成", "note": "", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["NumpadEnter"], "numpad": true}, {"cat": "メモリーロケーションとマーカー", "sec": "マーカーレーン", "key": "⌘ + ⌥ + ⌃ + P / ;", "act": "マーカーレーンを上下に移動", "note": "P（上）/ ;（下）", "freq": "△", "star": false, "mods": ["Alt", "Control", "Meta"], "codes": ["KeyP", "Semicolon"], "numpad": false}, {"cat": "メモリーロケーションとマーカー", "sec": "マーカーレーン", "key": "⇧ + Y", "act": "『マーカーを編集に追従』 入/切", "note": "", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["KeyY"], "numpad": false}, {"cat": "プレイリスト", "sec": "作成・複製", "key": "⌃ + \\", "act": "選択トラックを新規プレイリストに送る", "note": "\\ は delete の下のキー", "freq": "◎", "star": true, "mods": ["Control"], "codes": ["Backslash"], "numpad": false}, {"cat": "プレイリスト", "sec": "作成・複製", "key": "⌘ + ⌃ + \\", "act": "選択トラックをプレイリストに複製", "note": "", "freq": "◎", "star": true, "mods": ["Control", "Meta"], "codes": ["Backslash"], "numpad": false}, {"cat": "プレイリスト", "sec": "クリップの受け渡し", "key": "⌥ + ⇧ + ↓", "act": "選択範囲内のクリップを新規プレイリストにコピーして送る", "note": "クリップを元トラックに残したままプレイリストへ", "freq": "○", "star": false, "mods": ["Alt", "Shift"], "codes": ["ArrowDown"], "numpad": false}, {"cat": "プレイリスト", "sec": "クリップの受け渡し", "key": "⌥ + ⇧ + N", "act": "選択範囲内のクリップを新規プレイリストに送る", "note": "クリップを元トラックに残さずプレイリストへ", "freq": "○", "star": false, "mods": ["Alt", "Shift"], "codes": ["KeyN"], "numpad": false}, {"cat": "プレイリスト", "sec": "クリップの受け渡し", "key": "⌥ + ⇧ + ↑", "act": "プレイリスト内のクリップを表に移動", "note": "プレイリスト内の選択された 1つのクリップを上げる", "freq": "○", "star": false, "mods": ["Alt", "Shift"], "codes": ["ArrowUp"], "numpad": false}, {"cat": "プレイリスト", "sec": "表示の切替", "key": "⇧ + ↑ / ↓", "act": "選択トラックのプレイリストを順に表示", "note": "", "freq": "◎", "star": true, "mods": ["Shift"], "codes": ["ArrowUp", "ArrowDown"], "numpad": false}, {"cat": "プレイリスト", "sec": "表示の切替", "key": "⌘ + ⇧ + ↑ / ↓", "act": "選択トラックの範囲指定した部分のみプレイリストのクリップを順に表示", "note": "", "freq": "○", "star": false, "mods": ["Meta", "Shift"], "codes": ["ArrowUp", "ArrowDown"], "numpad": false}, {"cat": "クリップゲインとレベル", "sec": "クリップゲイン", "key": "⌃ + ⇧ + ↑ / ↓", "act": "クリップのレベルを上げ下げ", "note": "↑↓ の代わりにマウススクロールでも可", "freq": "◎", "star": true, "mods": ["Control", "Shift"], "codes": ["ArrowUp", "ArrowDown"], "numpad": false}, {"cat": "クリップゲインとレベル", "sec": "クリップゲイン", "key": "⌥ + ⇧ + ＝", "act": "クリップゲイン情報 表示/非表示", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Shift"], "codes": ["Equal"], "numpad": false}, {"cat": "クリップゲインとレベル", "sec": "クリップゲインライン", "key": "⌃ + ⇧ + −", "act": "クリップゲインライン 表示/非表示", "note": "− は 0 と ＝ の間のキー", "freq": "◎", "star": true, "mods": ["Control", "Shift"], "codes": ["Minus"], "numpad": false}, {"cat": "クリップゲインとレベル", "sec": "クリップゲインライン", "key": "⌃ + ⇧ + E", "act": "クリップゲインラインに BP を作る", "note": "BP＝ブレイクポイント（オートメーションを描くときの点）", "freq": "◎", "star": true, "mods": ["Control", "Shift"], "codes": ["KeyE"], "numpad": false}, {"cat": "クリップゲインとレベル", "sec": "クリップゲインライン", "key": "⌃ + ⇧ + < / >", "act": "クリップゲインラインの BP が 1つ分 移動", "note": "ナッジの数値で移動幅が変わる（< > の代わりにテンキー ＋ − でも可）", "freq": "○", "star": false, "mods": ["Control", "Shift"], "codes": ["Comma", "Period"], "numpad": false}, {"cat": "クリップゲインとレベル", "sec": "クリップゲインライン", "key": "⌃ + ⇧ + M / ?", "act": "クリップゲインラインの BP が大幅に移動", "note": "TC 29.97 = 5f / 23.976 = 6f（いずれもナッジが 1f のとき）", "freq": "○", "star": false, "mods": ["Control", "Shift"], "codes": ["KeyM", "Slash"], "numpad": false}, {"cat": "クリップゲインとレベル", "sec": "クリップゲインライン", "key": "⌃ + ⇧ + B", "act": "選択範囲のクリップゲインラインをクリア（0 に戻す）", "note": "B の代わりに delete でも可", "freq": "◎", "star": true, "mods": ["Control", "Shift"], "codes": ["KeyB"], "numpad": false}, {"cat": "クリップゲインとレベル", "sec": "クリップゲインライン", "key": "⌃ + ⇧ + X", "act": "クリップゲインをカット", "note": "BP を切り取ってフェードを作れる", "freq": "○", "star": false, "mods": ["Control", "Shift"], "codes": ["KeyX"], "numpad": false}, {"cat": "クリップゲインとレベル", "sec": "クリップゲインライン", "key": "⌃ + ⇧ + C", "act": "クリップゲインをコピー", "note": "ペーストは ⌘ + V（または V）", "freq": "○", "star": false, "mods": ["Control", "Shift"], "codes": ["KeyC"], "numpad": false}, {"cat": "オートメーション", "sec": "書き込み", "key": "⌘ + ?", "act": "選択範囲をライトに", "note": "オートメーションのブレイクポイントを作ることも", "freq": "◎", "star": true, "mods": ["Meta"], "codes": ["Slash"], "numpad": false}, {"cat": "オートメーション", "sec": "書き込み", "key": "⌥ + ?", "act": "現在のコントロールにオートメーションをグライド", "note": "", "freq": "○", "star": false, "mods": ["Alt"], "codes": ["Slash"], "numpad": false}, {"cat": "オートメーション", "sec": "書き込み", "key": "⌥ + ⇧ + ?", "act": "現在のコントロールにパンオートメーションをグライド", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Shift"], "codes": ["Slash"], "numpad": false}, {"cat": "オートメーション", "sec": "書き込み", "key": "⇧ + ⌥ + ?", "act": "全てのコントロールにオートメーションをグライド", "note": "", "freq": "△", "star": false, "mods": ["Alt", "Shift"], "codes": ["Slash"], "numpad": false}, {"cat": "オートメーション", "sec": "書き込み", "key": "⌘ + ⌥ + ?", "act": "有効にした全パラメータをライトに", "note": "", "freq": "△", "star": false, "mods": ["Alt", "Meta"], "codes": ["Slash"], "numpad": false}, {"cat": "オートメーション", "sec": "書き込み", "key": "⌘ + ⌥ + ⇧ + ?", "act": "有効にした全パラメータをトリム", "note": "", "freq": "△", "star": false, "mods": ["Alt", "Meta", "Shift"], "codes": ["Slash"], "numpad": false}, {"cat": "オートメーション", "sec": "編集", "key": "⌘ + X", "act": "オートメーションをカット", "note": "X のみでも可。BP を切り取ってフェードを作れる", "freq": "○", "star": false, "mods": ["Meta"], "codes": ["KeyX"], "numpad": false}, {"cat": "オートメーション", "sec": "編集", "key": "⌘ + ⌥ + H", "act": "Send にコピー", "note": "オートメーションなどを send にコピーできる", "freq": "○", "star": false, "mods": ["Alt", "Meta"], "codes": ["KeyH"], "numpad": false}, {"cat": "MIX（インサート／Send）", "sec": "まとめてミュート", "key": "⇧ + 4", "act": "選択トラックの send A–E をミュート 入/切", "note": "キーボード上段の数字", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["Digit4"], "numpad": false}, {"cat": "MIX（インサート／Send）", "sec": "まとめてミュート", "key": "⇧ + 5", "act": "選択トラックの send F–J をミュート 入/切", "note": "キーボード上段の数字", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["Digit5"], "numpad": false}, {"cat": "MIX（インサート／Send）", "sec": "まとめてミュート", "key": "⇧ + Q", "act": "選択トラックの send を全てミュート 入/切", "note": "", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["KeyQ"], "numpad": false}, {"cat": "MIX（インサート／Send）", "sec": "まとめてミュート", "key": "⇧ + A", "act": "選択トラックのインサートを全てミュート 入/切", "note": "", "freq": "◎", "star": true, "mods": ["Shift"], "codes": ["KeyA"], "numpad": false}, {"cat": "MIX（インサート／Send）", "sec": "種類別にミュート", "key": "⇧ + C", "act": "選択トラックのインサートの Dynamics だけを全てミュート 入/切", "note": "", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["KeyC"], "numpad": false}, {"cat": "MIX（インサート／Send）", "sec": "種類別にミュート", "key": "⇧ + D", "act": "選択トラックのインサートの Delay だけを全てミュート 入/切", "note": "", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["KeyD"], "numpad": false}, {"cat": "MIX（インサート／Send）", "sec": "種類別にミュート", "key": "⇧ + E", "act": "選択トラックのインサートの EQ だけを全てミュート 入/切", "note": "", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["KeyE"], "numpad": false}, {"cat": "MIX（インサート／Send）", "sec": "種類別にミュート", "key": "⇧ + V", "act": "選択トラックのインサートの Reverb だけを全てミュート 入/切", "note": "", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["KeyV"], "numpad": false}, {"cat": "環境設定・その他", "sec": "リンク設定", "key": "⇧ + ?", "act": "『タイムライン範囲と編集範囲をリンク』 入/切", "note": "", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["Slash"], "numpad": false}, {"cat": "環境設定・その他", "sec": "リンク設定", "key": "⇧ + T", "act": "『トラック選択と編集範囲をリンク』 入/切", "note": "", "freq": "○", "star": false, "mods": ["Shift"], "codes": ["KeyT"], "numpad": false}, {"cat": "環境設定・その他", "sec": "リンク設定", "key": "⌘ + ⌥ + tab", "act": "『タブ トゥ トランジェント』 入/切", "note": "", "freq": "○", "star": false, "mods": ["Alt", "Meta"], "codes": ["Tab"], "numpad": false}], "cats": ["セッションとファイル", "モードとツール", "トラック", "再生とロケート", "録音", "表示とズーム", "編集の基本", "クリップ操作（応用）", "メモリーロケーションとマーカー", "プレイリスト", "クリップゲインとレベル", "オートメーション", "MIX（インサート／Send）", "環境設定・その他"]};
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const STORE = "ptks-game-v1";
+const ROUND = 20, LIMIT = 8000;
+const MODSIGN = {Meta:"⌘", Alt:"⌥", Control:"⌃", Shift:"⇧"};
+// 重要度ごとの出やすさ。◎ は △ の 8 倍出る
+const WEIGHT = {"◎": 8, "○": 3, "△": 1};
+const MISS_BOOST = 3;        // 苦手な項目は最大 4 倍まで出やすくなる
+
+let mode = "star", cat = null;
+const modes = [["star","★ 基本"],["all","全部"],["weak","苦手だけ"],["cat","カテゴリ別"]];
+$("#modes").innerHTML = modes.map(([k,l]) =>
+  `<button class="mbtn ${k==='star'?'sel':''}" data-k="${k}">${l}</button>`).join("");
+$("#catrow").innerHTML = DATA.cats.map(c =>
+  `<button class="cbtn" data-c="${esc(c)}" style="font-size:13px;padding:7px 12px">${esc(c)}</button>`).join("");
+$("#catrow").style.display = "none";
+
+document.querySelectorAll(".mbtn").forEach(b => b.onclick = () => {
+  mode = b.dataset.k;
+  document.querySelectorAll(".mbtn").forEach(x => x.classList.toggle("sel", x === b));
+  $("#catrow").style.display = mode === "cat" ? "flex" : "none";
+  updatePool();
+});
+document.querySelectorAll(".cbtn").forEach(b => b.onclick = () => {
+  cat = b.dataset.c;
+  document.querySelectorAll(".cbtn").forEach(x => x.classList.toggle("sel", x === b));
+  updatePool();
+});
+
+/* ---------- 環境チェック ---------- */
+const UA = navigator.userAgent;
+const IS_MOBILE = /iPhone|iPad|iPod|Android/.test(UA) || (navigator.maxTouchPoints > 1 && !/Macintosh/.test(UA));
+const IS_CHROMIUM = /Chrome\//.test(UA) || /Edg\//.test(UA);
+const HAS_LOCK = !!(navigator.keyboard && navigator.keyboard.lock);
+(function envCheck(){
+  const b = [];
+  if (IS_MOBILE)
+    b.push(['stop', '<b>このゲームは物理キーボードが必要です。</b>パソコン（Mac）の Chrome で開いてください。']);
+  else if (!IS_CHROMIUM)
+    b.push(['warn', '<b>Chrome または Edge で開くことをおすすめします。</b>このブラウザでは ⌘ を使う問題がブラウザ側に取られてしまい、正しく判定できません。' +
+                    '下の「⌘ を使う問題を除く」を ON にすれば、このままでも遊べます。']);
+  else if (!HAS_LOCK || !window.isSecureContext)
+    b.push(['warn', '<b>⌘+N などの一部のキーが判定できない可能性があります。</b>https:// のURLを Chrome / Edge で開くと、すべての問題が判定できます。']);
+  $("#warn").innerHTML = b.map(([k,t]) => `<div class="banner ${k}">${t}</div>`).join("");
+  if (!IS_CHROMIUM || !HAS_LOCK){ $("#nocmd").checked = true; }
+  if (!HAS_LOCK){ $("#uselock").checked = false; $("#uselock").disabled = true; }
+})();
+
+function store(){ try { return JSON.parse(localStorage.getItem(STORE) || "{}"); } catch(e){ return {}; } }
+function saveStore(o){ try { localStorage.setItem(STORE, JSON.stringify(o)); } catch(e){} }
+
+function pool(){
+  const st = store(), pad = $("#hasnumpad").checked;
+  let qs = DATA.questions.filter(q => pad || !q.numpad);
+  if ($("#nocmd").checked) qs = qs.filter(q => !q.mods.includes("Meta"));
+  if (mode === "star") qs = qs.filter(q => q.star);
+  if (mode === "cat")  qs = qs.filter(q => q.cat === (cat || DATA.cats[0]));
+  if (mode === "weak"){
+    const miss = st.miss || {};
+    qs = qs.filter(q => miss[q.act]).sort((a,b) => (miss[b.act]||0) - (miss[a.act]||0));
+  }
+  return qs;
+}
+function weightOf(q, miss){
+  const w = $("#weighted").checked ? (WEIGHT[q.freq] || 3) : 1;
+  return w * (1 + Math.min(MISS_BOOST, miss[q.act] || 0));
+}
+/** 重み付きで重複なく n 問選ぶ */
+function pickRound(qs, n){
+  const miss = store().miss || {};
+  const rest = qs.slice(), out = [];
+  while (out.length < n && rest.length){
+    const ws = rest.map(q => weightOf(q, miss));
+    let r = Math.random() * ws.reduce((a,b) => a+b, 0), i = 0;
+    while (r > ws[i] && i < rest.length - 1){ r -= ws[i]; i++; }
+    out.push(rest.splice(i, 1)[0]);
+  }
+  return out;
+}
+function updatePool(){
+  const qs = pool(), n = qs.length;
+  const c = {"◎":0,"○":0,"△":0};
+  qs.forEach(q => c[q.freq] = (c[q.freq] || 0) + 1);
+  let txt = `出題対象 ${n} 問（◎ ${c["◎"]} / ○ ${c["○"]} / △ ${c["△"]}）`;
+  if (n && $("#weighted").checked){
+    const miss = store().miss || {};
+    const tot = qs.reduce((a,q) => a + weightOf(q, miss), 0);
+    const share = f => Math.round(qs.filter(q => q.freq === f)
+                        .reduce((a,q) => a + weightOf(q, miss), 0) / tot * ROUND * 10) / 10;
+    txt += `　→ 1ラウンド20問の目安：◎ ${share("◎")}問 / ○ ${share("○")}問 / △ ${share("△")}問`;
+  }
+  if (mode === "weak" && !n) txt = "まだ苦手データがありません。まず★基本を1ラウンド遊んでください";
+  $("#poolinfo").textContent = txt;
+}
+updatePool();
+$("#hasnumpad").onchange = updatePool;
+$("#weighted").onchange = updatePool;
+$("#nocmd").onchange = updatePool;
+
+/* ---------- ゲーム ---------- */
+let queue = [], qi = 0, score = 0, combo = 0, maxCombo = 0, log = [], timer = null, t0 = 0, hintTimer = null, locked = false;
+
+$("#start").onclick = async () => {
+  const p = pool();
+  if (!p.length){ alert("出題できる問題がありません"); return; }
+  queue = pickRound(p, ROUND);
+  qi = 0; score = 0; combo = 0; maxCombo = 0; log = [];
+  $("#play").classList.add("on");
+  try { await document.documentElement.requestFullscreen(); } catch(e){}
+  if ($("#uselock").checked && navigator.keyboard && navigator.keyboard.lock){
+    try { await navigator.keyboard.lock(); locked = true; } catch(e){}
+  }
+  next();
+};
+$("#quit").onclick = () => endGame(true);
+
+function keyHTML(key, big){
+  const cls = big ? "k big" : "k";
+  return key.split(/( \+ | \/ )/).map(p => {
+    if (p === " + ") return '<span class="sep">＋</span>';
+    if (p === " / ") return '<span class="sep">/</span>';
+    if (!p.trim()) return "";
+    return `<span class="${cls}">${esc(p.trim())}</span>`;
+  }).join("");
+}
+
+function next(){
+  clearInterval(timer); clearTimeout(hintTimer);
+  if (qi >= queue.length){ endGame(false); return; }
+  const q = queue[qi];
+  $("#qcat").textContent = q.cat + "　›　" + q.sec;
+  $("#qact").textContent = q.act;
+  $("#qnote").textContent = "";
+  $("#verdict").textContent = ""; $("#verdict").className = "verdict";
+  $("#qnum").textContent = `${qi+1} / ${queue.length}`;
+  $("#score").textContent = score;
+  $("#combo").textContent = combo >= 2 ? combo + " コンボ" : "";
+  document.querySelectorAll(".mod").forEach(m => m.classList.remove("on"));
+  t0 = performance.now();
+  $("#tbar").parentElement.classList.remove("warn");
+  timer = setInterval(() => {
+    const left = 1 - (performance.now() - t0) / LIMIT;
+    $("#tbar").style.width = Math.max(0, left * 100) + "%";
+    $("#tbar").parentElement.classList.toggle("warn", left < .3);
+    if (left <= 0) judge(null);
+  }, 40);
+  if ($("#showhint").checked)
+    hintTimer = setTimeout(() => { $("#qnote").innerHTML = "ヒント： " + esc(q.key); }, 3000);
+}
+
+function judge(ev){
+  const q = queue[qi];
+  clearInterval(timer); clearTimeout(hintTimer);
+  const ms = performance.now() - t0;
+  let ok = false;
+  if (ev){
+    const mods = [];
+    if (ev.metaKey) mods.push("Meta");
+    if (ev.altKey) mods.push("Alt");
+    if (ev.ctrlKey) mods.push("Control");
+    if (ev.shiftKey) mods.push("Shift");
+    ok = mods.sort().join("+") === [...q.mods].sort().join("+") && q.codes.includes(ev.code);
+  }
+  if (ok){
+    combo++; maxCombo = Math.max(maxCombo, combo);
+    const speed = Math.max(0, 1 - ms / LIMIT);
+    const gained = Math.round(100 + speed * 100) * Math.min(5, 1 + (combo - 1) * .2);
+    score += Math.round(gained);
+    $("#verdict").className = "verdict ok";
+    $("#verdict").innerHTML = `正解　<span style="font-weight:400;font-size:15px">${(ms/1000).toFixed(2)} 秒　+${Math.round(gained)}</span>`;
+  } else {
+    combo = 0;
+    $("#verdict").className = "verdict ng";
+    $("#verdict").innerHTML = (ev ? "ちがいます" : "時間切れ") +
+      `<div class="answer">${keyHTML(q.key, true)}</div>`;
+  }
+  log.push({q, ok, ms});
+  qi++;
+  setTimeout(next, ok ? 550 : 1500);
+}
+
+function endGame(aborted){
+  clearInterval(timer); clearTimeout(hintTimer);
+  if (locked && navigator.keyboard) navigator.keyboard.unlock();
+  locked = false;
+  if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+  $("#play").classList.remove("on");
+  if (!log.length) return;
+  const st = store(); st.miss = st.miss || {};
+  log.forEach(l => { if (!l.ok) st.miss[l.q.act] = (st.miss[l.q.act] || 0) + 1;
+                     else if (st.miss[l.q.act]) st.miss[l.q.act]--; });
+  const oks = log.filter(l => l.ok);
+  st.best = Math.max(st.best || 0, score);
+  saveStore(st);
+  const avg = oks.length ? oks.reduce((a,l) => a + l.ms, 0) / oks.length / 1000 : 0;
+  $("#resultbox").style.display = "";
+  $("#resultbox").innerHTML = `
+    <div class="card">
+      <h2>${aborted ? "途中結果" : "結果"}</h2>
+      <div class="stat">
+        <div><span>スコア</span><b class="big">${score}</b></div>
+        <div><span>正解</span><b class="big">${oks.length}<span style="font-size:16px">/${log.length}</span></b></div>
+        <div><span>平均反応</span><b class="big">${avg.toFixed(2)}<span style="font-size:16px">秒</span></b></div>
+        <div><span>最大コンボ</span><b class="big">${maxCombo}</b></div>
+        <div><span>ベスト</span><b class="big">${st.best}</b></div>
+      </div>
+      ${log.filter(l => !l.ok).length ? `<h2 style="margin-top:20px">まちがえた問題</h2>
+        <table><tr><th>機能</th><th>正解</th></tr>` +
+        log.filter(l => !l.ok).map(l => `<tr><td>${esc(l.q.act)}</td><td>${keyHTML(l.q.key)}</td></tr>`).join("") +
+        `</table>` : '<div class="muted" style="margin-top:14px">全問正解でした。</div>'}
+    </div>`;
+  const miss = Object.entries(st.miss).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]);
+  $("#weakbox").style.display = miss.length ? "" : "none";
+  $("#weakbox").innerHTML = miss.length ? `<div class="card"><h2>苦手リスト（${miss.length}）</h2>
+    <div class="muted">「苦手だけ」モードで重点的に練習できます。</div>
+    <table><tr><th>機能</th><th>ミス</th></tr>` +
+    miss.slice(0,15).map(([a,v]) => `<tr><td>${esc(a)}</td><td>${v}</td></tr>`).join("") + `</table></div>` : "";
+  updatePool();
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+document.addEventListener("keydown", ev => {
+  if (!$("#play").classList.contains("on")) return;
+  ev.preventDefault(); ev.stopPropagation();
+  document.querySelectorAll(".mod").forEach(m =>
+    m.classList.toggle("on", {Meta:ev.metaKey,Alt:ev.altKey,Control:ev.ctrlKey,Shift:ev.shiftKey}[m.dataset.m]));
+  if (/^(Meta|Alt|Control|Shift)(Left|Right)$/.test(ev.code)) return;
+  if ($("#verdict").textContent) return;      // 判定表示中は受け付けない
+  judge(ev);
+}, true);
+document.addEventListener("keyup", () => {
+  if (!$("#play").classList.contains("on")) return;
+  document.querySelectorAll(".mod").forEach(m => m.classList.remove("on"));
+}, true);
+</script>
+</body>
+</html>
