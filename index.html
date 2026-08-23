@@ -133,7 +133,7 @@ const WEIGHT = {"◎": 8, "○": 3, "△": 1};
 const MISS_BOOST = 3;        // 苦手な項目は最大 4 倍まで出やすくなる
 
 let mode = "star", cat = null;
-const modes = [["star","★ 基本"],["all","全部"],["weak","苦手だけ"],["cat","カテゴリ別"]];
+const modes = [["star","★ 基本"],["all","全部"],["weak","苦手だけ"],["cat","カテゴリ別"],["seq","順番入力だけ（β確認用）"]];
 $("#modes").innerHTML = modes.map(([k,l]) =>
   `<button class="mbtn ${k==='star'?'sel':''}" data-k="${k}">${l}</button>`).join("");
 $("#catrow").innerHTML = DATA.cats.map(c =>
@@ -179,6 +179,7 @@ function pool(){
   let qs = DATA.questions.filter(q => pad || !q.numpad);
   if ($("#nocmd").checked) qs = qs.filter(q => !q.meta);
   if (mode === "star") qs = qs.filter(q => q.star);
+  if (mode === "seq")  qs = qs.filter(q => q.type === "seq");
   if (mode === "cat")  qs = qs.filter(q => q.cat === (cat || DATA.cats[0]));
   if (mode === "weak"){
     const miss = st.miss || {};
@@ -202,6 +203,17 @@ function pickRound(qs, n){
   }
   return out;
 }
+/** 1ラウンド分の並びを作る。順番入力モードは母数が少ないので繰り返して埋める */
+function buildRound(p){
+  if (mode !== "seq") return pickRound(p, ROUND);
+  const out = [];
+  while (out.length < ROUND){
+    const batch = pickRound(p, Math.min(p.length, ROUND - out.length));
+    if (!batch.length) break;
+    out.push(...batch);
+  }
+  return out;
+}
 function updatePool(){
   const qs = pool(), n = qs.length;
   const c = {"◎":0,"○":0,"△":0};
@@ -215,6 +227,10 @@ function updatePool(){
     txt += `　→ 1ラウンド20問の目安：◎ ${share("◎")}問 / ○ ${share("○")}問 / △ ${share("△")}問`;
   }
   if (mode === "weak" && !n) txt = "まだ苦手データがありません。まず★基本を1ラウンド遊んでください";
+  if (mode === "seq"){
+    txt = n ? `順番に押す問題 ${n} 問を、数字を変えながら 20 問くり返します`
+            : "順番入力の問題はテンキーを使います。「テンキーがある」にチェックを入れてください";
+  }
   $("#poolinfo").textContent = txt;
 }
 updatePool();
@@ -255,7 +271,7 @@ function renderSlots(){
 $("#start").onclick = async () => {
   const p = pool();
   if (!p.length){ alert("出題できる問題がありません"); return; }
-  queue = pickRound(p, ROUND);
+  queue = buildRound(p);
   qi = 0; score = 0; combo = 0; maxCombo = 0; log = [];
   $("#play").classList.add("on");
   try { await document.documentElement.requestFullscreen(); } catch(e){}
