@@ -208,9 +208,20 @@ function pickRound(qs, n){
   }
   return out;
 }
+/** 中身が毎回変わる「入力問題」（タイムコード / メモリーロケーション番号） */
+const isInput = q => q.type === "tc" || (q.type === "seq" && q.steps.some(st => st.kind === "digits"));
+
 /** 1ラウンド分の並びを作る。順番入力モードは母数が少ないので繰り返して埋める */
 function buildRound(p){
-  if (mode !== "seq") return pickRound(p, ROUND);
+  if (mode !== "seq"){
+    const out = pickRound(p, ROUND);
+    const inputs = p.filter(isInput);
+    // 入力問題が1問も入らなかったラウンドには、必ず1問ねじ込む
+    if (inputs.length && !out.some(isInput) && out.length){
+      out[Math.floor(Math.random() * out.length)] = pickRound(inputs, 1)[0];
+    }
+    return out;
+  }
   const out = [];
   while (out.length < ROUND){
     const batch = pickRound(p, Math.min(p.length, ROUND - out.length));
@@ -232,6 +243,8 @@ function updatePool(){
     txt += `　→ 1ラウンド20問の目安：◎ ${share("◎")}問 / ○ ${share("○")}問 / △ ${share("△")}問`;
   }
   if (mode === "weak" && !n) txt = "まだ苦手データがありません。まず★基本を1ラウンド遊んでください";
+  if (mode !== "seq" && n && qs.some(isInput))
+    txt += "　／　入力問題（タイムコード・メモリーロケーション）が必ず 1 問入ります";
   if (mode === "seq"){
     txt = n ? `順番に押す問題・タイムコード入力 ${n} 問を、数字を変えながら 20 問くり返します`
             : "順番入力の問題はテンキーを使います。「テンキーがある」にチェックを入れてください";
