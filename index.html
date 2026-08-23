@@ -268,15 +268,41 @@ function expandSeq(q){
 }
 let tcTarget = "", tcBuf = "", tcPhase = 0, tcFirst = "";
 
-/** 出題するタイムコードを作る。半分は 00 が並ぶ値にして「.」の練習になるようにする */
+/** 出題するタイムコードを作る。実務で出てきやすい値に寄せる */
+function wpick(list){                       // list = [[値, 重み], ...]
+  let tot = 0; for (const w of list) tot += w[1];
+  let r = Math.random() * tot;
+  for (const [v, w] of list){ r -= w; if (r < 0) return v; }
+  return list[list.length - 1][0];
+}
+function spread(values, total){             // 残りの値に均等に重みを配る
+  return values.map(v => [v, total / values.length]);
+}
 function genTC(){
-  const r = n => Math.floor(Math.random() * n);
   const pad = n => String(n).padStart(2, "0");
-  const round = Math.random() < 0.5;
-  const hh = [0, 0, 1, 10][r(4)];
-  const mm = round ? [0, 10, 15, 20, 30, 45][r(6)] : r(60);
-  const ss = round ? 0 : r(60);
-  const ff = round ? 0 : r(24);
+  const range = (a, b) => Array.from({length: b - a + 1}, (_, i) => a + i);
+
+  // 時：00 と 01 が中心、02〜23 はたまに
+  const hh = wpick([[0, 40], [1, 35], ...spread(range(2, 23), 25)]);
+
+  // 分：00 と 10 の倍数が中心、5 の倍数・偶数と続き、57〜59 はまれ
+  const rareM = [57, 58, 59];
+  const mm = wpick([
+    [0, 20],
+    ...spread([10, 20, 30, 40, 50], 30),
+    ...spread([5, 15, 25, 35, 45, 55], 22),
+    ...spread(range(1, 56).filter(n => n % 2 === 0 && n % 5 !== 0), 25),
+    ...spread(rareM, 3),
+  ]);
+
+  // 秒：00 / 14 / 29 / 30 / 59 が中心、たまにランダム
+  const keyS = [0, 14, 29, 30, 59];
+  const ss = wpick([...spread(keyS, 80), ...spread(range(0, 59).filter(n => !keyS.includes(n)), 20)]);
+
+  // フレーム：00 / 12 / 15 が中心
+  const keyF = [0, 12, 15];
+  const ff = wpick([...spread(keyF, 80), ...spread(range(0, 23).filter(n => !keyF.includes(n)), 20)]);
+
   return [pad(hh), pad(mm), pad(ss), pad(ff)].join("");
 }
 function tcFormat(s8){
