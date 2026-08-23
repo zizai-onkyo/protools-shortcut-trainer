@@ -414,7 +414,7 @@ function renderSlots(){
 }
 
 DATA.questions.filter(q => q.shot).forEach(q => {      // 出題時にちらつかないよう先読み
-  ["before","after"].forEach(w => { const i = new Image(); i.src = `shots/${q.shot}_${w}.png`; });
+  ["before","after"].forEach(w => { const i = new Image(); i.src = `shots/${q.shot}_${w}.jpg`; });
 });
 $("#start").onclick = async () => {
   const p = pool();
@@ -476,8 +476,8 @@ function next(){
   $("#qact").textContent = prompt;
   if (q.shot){
     const [b, a] = q.shotSwap ? ["after", "before"] : ["before", "after"];
-    $("#shot-before").src = `shots/${q.shot}_${b}.png`;
-    $("#shot-after").src = `shots/${q.shot}_${a}.png`;
+    $("#shot-before").src = `shots/${q.shot}_${b}.jpg`;
+    $("#shot-after").src = `shots/${q.shot}_${a}.jpg`;
     $("#shotrow").style.display = "flex";
   } else {
     $("#shotrow").style.display = "none";
