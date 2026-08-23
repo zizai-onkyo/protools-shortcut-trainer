@@ -388,7 +388,7 @@ function tcInput(ev){
 function scrollLabel(q){
   const sign = {Shift:"⇧", Control:"⌃", Alt:"⌥", Meta:"⌘"};
   return ["Shift","Control","Alt","Meta"].filter(m => q.scroll.mods.includes(m)).map(m => sign[m])
-    .concat(["マウススクロール" + (q.scroll.dir === "up" ? "上" : "下")]).join(" + ");
+    .concat(["マウススクロール"]).join(" + ");
 }
 function renderSlots(){
   if (!seqSteps){ $("#seq").innerHTML = ""; return; }
@@ -633,9 +633,11 @@ $("#play").addEventListener("wheel", e => {
   const mods = modsOfMouse(e);
   if (!mods.length) return;               // 修飾キー無しの偶発的なスクロールは無視
   e.preventDefault();
-  if (Math.abs(e.deltaY) < 1) return;
-  const dir = e.deltaY < 0 ? "up" : "down";
-  settle(mods.join("+") === [...q.scroll.mods].sort().join("+") && dir === q.scroll.dir);
+  // ⇧ を押していると縦スクロールが deltaX に入るため、大きいほうの軸で判定する
+  const amount = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+  if (Math.abs(amount) < 1) return;
+  // 向きは「ナチュラルなスクロール」の設定で符号が変わるため問わない
+  settle(mods.join("+") === [...q.scroll.mods].sort().join("+"));
 }, {passive: false});
 $("#play").addEventListener("mouseup", () => {
   if (dragFrom){                       // 動かさずに離した：不正解にはしない
