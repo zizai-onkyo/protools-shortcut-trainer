@@ -94,12 +94,14 @@
     <label><input type="checkbox" id="nocmd"> ⌘ を使う問題を除く（Chrome / Edge 以外で遊ぶとき）</label>
     <label><input type="checkbox" id="uselock" checked> Keyboard Lock を使う（推奨）</label>
     <label><input type="checkbox" id="hasnumpad" checked> テンキーがある</label>
+    <label><input type="checkbox" id="memo">
+      <span><b>暗記モード</b> — 最初から答えが出ます。間違えたら同じ問題をもう一度。時間制限・スコア・苦手記録はありません</span></label>
     <label><input type="checkbox" id="showhint"> 3秒たったら答えを表示する（練習モード）</label>
     <div class="muted" id="poolinfo" style="margin-top:8px"></div>
   </div>
 
   <div class="row"><button class="primary" id="start">スタート</button>
-    <span class="muted">1ラウンド20問／1問8秒</span></div>
+    <span class="muted" id="roundinfo">1ラウンド20問／1問8秒</span></div>
 
   <div id="resultbox" style="display:none;margin-top:22px"></div>
   <div id="weakbox" style="display:none;margin-top:14px"></div>
@@ -133,6 +135,7 @@ const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'
 const STORE = "ptks-game-v1";
 const ROUND = 20, LIMIT = 8000;
 const MODSIGN = {Meta:"⌘", Alt:"⌥", Control:"⌃", Shift:"⇧"};
+const memo = () => $("#memo").checked;
 // 重要度ごとの出やすさ。◎ は △ の 8 倍出る
 const WEIGHT = {"◎": 8, "○": 3, "△": 1};
 const MISS_BOOST = 3;        // 苦手な項目は最大 4 倍まで出やすくなる
@@ -255,6 +258,10 @@ updatePool();
 $("#hasnumpad").onchange = updatePool;
 $("#weighted").onchange = updatePool;
 $("#nocmd").onchange = updatePool;
+$("#memo").onchange = () => {
+  $("#roundinfo").textContent = memo() ? "1ラウンド20問／時間制限なし" : "1ラウンド20問／1問8秒";
+  $("#showhint").disabled = memo();
+};
 
 /* ---------- ゲーム ---------- */
 let queue = [], qi = 0, score = 0, combo = 0, maxCombo = 0, log = [], timer = null, t0 = 0, hintTimer = null, locked = false;
@@ -322,13 +329,15 @@ function tcFormat(s8){
   return s8.slice(0,2) + ":" + s8.slice(2,4) + ":" + s8.slice(4,6) + ":" + s8.slice(6,8);
 }
 function renderTC(){
-  const shown = tcFormat(tcBuf.padEnd(8, "_"));
+  const shown = tcFormat(tcBuf.padEnd(8, memo() ? "" : "_") || "");
   const cut = tcFormat(tcBuf).length;
-  const html = `<span class="slot ${tcPhase > 0 ? "done" : "now"}">${tcPhase > 0 ? esc(tcFirst) : "？"}</span>` +
+  const full = memo() ? tcFormat(tcTarget) : shown;
+  const html = `<span class="slot ${tcPhase > 0 ? "done" : "now"}">${
+      tcPhase > 0 ? esc(tcFirst) : (memo() ? "テンキー ＝" : "？")}</span>` +
     `<span class="seqarrow">→</span>` +
-    `<span class="tcfield ${tcPhase === 1 ? "now" : ""}">${esc(shown.slice(0, cut))}<span class="rest">${esc(shown.slice(cut))}</span></span>` +
+    `<span class="tcfield ${tcPhase === 1 ? "now" : ""}">${esc(full.slice(0, cut))}<span class="rest">${esc(full.slice(cut))}</span></span>` +
     `<span class="seqarrow">→</span>` +
-    `<span class="slot ${tcPhase >= 2 ? "now" : ""}">？</span>`;
+    `<span class="slot ${tcPhase >= 2 ? "now" : ""}">${memo() ? "Enter" : "？"}</span>`;
   $("#seq").innerHTML = html;
 }
 /** タイムコード問題のキー入力。true=正解確定 / false=不正解 / null=まだ途中 */
@@ -361,7 +370,7 @@ function renderSlots(){
   if (!seqSteps){ $("#seq").innerHTML = ""; return; }
   $("#seq").innerHTML = seqSteps.map((st, i) =>
     `<span class="slot ${i < seqIdx ? "done" : (i === seqIdx ? "now" : "")}">${
-      i < seqIdx ? esc(st.label) : "？"}</span>`).join('<span class="seqarrow">→</span>');
+      (i < seqIdx || memo()) ? esc(st.label) : "？"}</span>`).join('<span class="seqarrow">→</span>');
 }
 
 $("#start").onclick = async () => {
@@ -410,7 +419,9 @@ function next(){
   } else {
     curAnswer = q.key;
   }
-  if (q.type === "tc") renderTC(); else renderSlots();
+  if (q.type === "tc") renderTC();
+  else if (q.type === "seq") renderSlots();
+  else $("#seq").innerHTML = memo() ? keyHTML(q.key, true) : "";
   $("#qcat").textContent = q.cat + "　›　" + q.sec;
   $("#qact").textContent = prompt;
   $("#qact").className = q.type === "tc" ? "qact tcgoal" : "qact";
@@ -423,6 +434,8 @@ function next(){
   document.querySelectorAll(".mod").forEach(m => m.classList.remove("on"));
   t0 = performance.now();
   $("#tbar").parentElement.classList.remove("warn");
+  $("#score").style.display = $("#combo").style.display = memo() ? "none" : "";
+  if (memo()){ $("#tbar").style.width = "100%"; return; }   // 暗記モードは時間制限なし
   timer = setInterval(() => {
     const left = 1 - (performance.now() - t0) / curLimit;
     $("#tbar").style.width = Math.max(0, left * 100) + "%";
@@ -454,10 +467,29 @@ function judge(ev){
   settle(q.alts.some(a => m === [...a.mods].sort().join("+") && a.codes.includes(ev.code)));
 }
 
+function retrySame(){
+  seqIdx = 0; tcBuf = ""; tcPhase = 0; tcFirst = "";
+  $("#verdict").textContent = ""; $("#verdict").className = "verdict";
+  const q = queue[qi];
+  if (q.type === "tc") renderTC(); else if (q.type === "seq") renderSlots();
+}
+
 function settle(ok){
   const q = queue[qi];
   clearInterval(timer); clearTimeout(hintTimer);
   const ms = performance.now() - t0;
+  if (memo()){
+    if (ok){
+      $("#verdict").className = "verdict ok";
+      $("#verdict").textContent = "正解";
+      qi++; setTimeout(next, 450);
+    } else {
+      $("#verdict").className = "verdict ng";
+      $("#verdict").innerHTML = "もう一度" + `<div class="answer">${keyHTML(curAnswer, true)}</div>`;
+      setTimeout(retrySame, 1300);
+    }
+    return;
+  }
   if (ok){
     combo++; maxCombo = Math.max(maxCombo, combo);
     const speed = Math.max(0, 1 - ms / curLimit);
@@ -484,6 +516,14 @@ function endGame(aborted){
   locked = false;
   if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
   $("#play").classList.remove("on");
+  if (memo()){
+    $("#resultbox").style.display = "";
+    $("#resultbox").innerHTML = `<div class="card"><h2>暗記モード終了</h2>
+      <div class="muted">${qi} 問ぶん練習しました。スコアと苦手記録は残していません。</div></div>`;
+    $("#weakbox").style.display = "none";
+    window.scrollTo(0, document.body.scrollHeight);
+    return;
+  }
   if (!log.length) return;
   const st = store(); st.miss = st.miss || {};
   log.forEach(l => { if (!l.ok) st.miss[l.q.act] = (st.miss[l.q.act] || 0) + 1;
