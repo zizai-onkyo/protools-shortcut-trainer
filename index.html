@@ -106,6 +106,9 @@
     <label><input type="checkbox" id="hasnumpad" checked> テンキーがある</label>
     <label><input type="checkbox" id="usemouse" checked>
       <span>マウス操作の問題を出す（⌥ ＋ クリック、⌥ ＋ ドラッグ など 22問）</span></label>
+    <label><input type="checkbox" id="autonext" checked>
+      <span><b>自動で次の問題へ</b> — 外すと、答えたあと「次の問題」を押すまで同じ画面に留まります
+      （その場で押し直して確認できます。点数は最初の1回だけ数えます）</span></label>
     <label><input type="checkbox" id="memo">
       <span><b>暗記モード</b> — 最初から答えが出ます。間違えたら同じ問題をもう一度。時間制限・スコア・苦手記録はありません</span></label>
     <label><input type="checkbox" id="showhint"> 3秒たったら答えを表示する（練習モード）</label>
@@ -142,7 +145,11 @@
     <div class="mod" data-m="Alt">⌥</div><div class="mod" data-m="Command">⌘</div>
   </div>
   <div class="verdict" id="verdict"></div>
-  <div style="position:fixed;bottom:22px"><button id="quit">やめる</button></div>
+  <div class="stagebtns" style="position:fixed;bottom:22px">
+    <button id="skip">スキップ</button>
+    <button class="primary" id="nextq" style="display:none">次の問題</button>
+    <button id="quit">やめる</button>
+  </div>
 </div>
 
 <script>
@@ -153,6 +160,7 @@ const STORE = "ptks-game-v1";
 const ROUND = 20, LIMIT = 8000;
 const MODSIGN = {Meta:"⌘", Alt:"⌥", Control:"⌃", Shift:"⇧"};
 const memo = () => $("#memo").checked;
+const autonext = () => $("#autonext").checked;
 // ⇧ はキー刻印に近い横長の矢印を自前で描く
 const SHIFT_SVG = '<svg class="glyph" viewBox="0 0 23 18"><path d="M11.5 1 L1 10.4 H7.4 V17 H15.6 V10.4 H22 Z"' +
   ' fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
@@ -301,6 +309,7 @@ $("#memo").onchange = () => {
 /* ---------- ゲーム ---------- */
 let queue = [], qi = 0, score = 0, combo = 0, maxCombo = 0, log = [], timer = null, t0 = 0, hintTimer = null, locked = false;
 let seqSteps = null, seqIdx = 0, curLimit = LIMIT, curAnswer = "";
+let inputLocked = false, answered = false, skipped = 0;
 
 const modsOf = ev => {
   const m = [];
@@ -419,7 +428,7 @@ DATA.questions.filter(q => q.shot).forEach(q => {      // 出題時にちらつ�
 $("#start").onclick = async () => {
   const p = pool();
   if (!p.length){ alert("出題できる問題がありません"); return; }
-  queue = buildRound(p);
+  queue = buildRound(p); skipped = 0;
   qi = 0; score = 0; combo = 0; maxCombo = 0; log = [];
   $("#play").classList.add("on");
   try { await document.documentElement.requestFullscreen(); } catch(e){}
@@ -429,6 +438,12 @@ $("#start").onclick = async () => {
   next();
 };
 $("#quit").onclick = () => endGame(true);
+$("#nextq").onclick = () => { clearInterval(timer); inputLocked = true; qi++; next(); };
+$("#skip").onclick = () => {
+  clearInterval(timer); clearTimeout(hintTimer);
+  if (!answered) skipped++;
+  inputLocked = true; qi++; next();
+};
 
 function keyHTML(key, big){
   const cls = big ? "k big" : "k";
@@ -449,6 +464,9 @@ function next(){
   if (qi >= queue.length){ endGame(false); return; }
   const q = queue[qi];
   seqSteps = null; seqIdx = 0;
+  inputLocked = false; answered = false;
+  $("#nextq").style.display = "none";
+  $("#skip").style.display = "";
   curLimit = q.type === "tc" ? LIMIT * 2.6 : (q.type === "seq" ? LIMIT * 1.8 : LIMIT);
   let prompt = q.act;
   tcTarget = ""; tcBuf = ""; tcPhase = 0; tcFirst = "";
@@ -530,7 +548,7 @@ function judge(ev){
 }
 
 function retrySame(){
-  seqIdx = 0; tcBuf = ""; tcPhase = 0; tcFirst = "";
+  seqIdx = 0; tcBuf = ""; tcPhase = 0; tcFirst = ""; inputLocked = false;
   $("#verdict").textContent = ""; $("#verdict").className = "verdict";
   const q = queue[qi];
   if (q.type === "tc") renderTC(); else if (q.type === "seq") renderSlots();
@@ -544,23 +562,29 @@ function settle(ok){
     if (ok){
       $("#verdict").className = "verdict ok";
       $("#verdict").textContent = "正解";
-      qi++; setTimeout(next, 450);
+      if (autonext()){ inputLocked = true; qi++; setTimeout(next, 450); }
+      else { inputLocked = true; $("#nextq").style.display = ""; $("#skip").style.display = "none"; }
     } else {
       $("#verdict").className = "verdict ng";
       $("#verdict").innerHTML = "もう一度" + `<div class="answer">${keyHTML(curAnswer, true)}</div>`;
+      inputLocked = true;
       setTimeout(retrySame, 1300);
     }
     return;
   }
+  const first = !answered;                 // 点数に数えるのは最初の1回だけ
+  answered = true;
   if (ok){
-    combo++; maxCombo = Math.max(maxCombo, combo);
+    if (first){ combo++; maxCombo = Math.max(maxCombo, combo); }
     const speed = Math.max(0, 1 - ms / curLimit);
-    const gained = Math.round((100 + speed * 100) * Math.min(5, 1 + (combo - 1) * .2));
+    const gained = first ? Math.round((100 + speed * 100) * Math.min(5, 1 + (combo - 1) * .2)) : 0;
     score += gained;
     $("#verdict").className = "verdict ok";
-    $("#verdict").innerHTML = `正解　<span style="font-weight:400;font-size:15px">${(ms/1000).toFixed(2)} 秒　+${gained}</span>`;
+    $("#verdict").innerHTML = first
+      ? `正解　<span style="font-weight:400;font-size:15px">${(ms/1000).toFixed(2)} 秒　+${gained}</span>`
+      : `正解　<span style="font-weight:400;font-size:15px">（点数は最初の1回のみ）</span>`;
   } else {
-    combo = 0;
+    if (first) combo = 0;
     $("#verdict").className = "verdict ng";
     $("#verdict").innerHTML = (ms >= curLimit ? "時間切れ" : "ちがいます") +
       `<div class="answer">${keyHTML(curAnswer, true)}</div>` +
@@ -569,9 +593,15 @@ function settle(ok){
     if (seqSteps){ seqIdx = seqSteps.length; renderSlots(); }
     if (q.type === "tc"){ tcBuf = tcTarget; tcPhase = 2; renderTC(); }
   }
-  log.push({q, ok, ms, answer: curAnswer});
-  qi++;
-  setTimeout(next, ok ? 550 : 1700);
+  if (first) log.push({q, ok, ms, answer: curAnswer});
+  if (autonext()){
+    inputLocked = true;
+    qi++;
+    setTimeout(next, ok ? 550 : 1700);
+  } else {
+    inputLocked = false;                   // その場で押し直して確認できる
+    $("#nextq").style.display = "";
+  }
 }
 
 function endGame(aborted){
@@ -606,6 +636,7 @@ function endGame(aborted){
         <div><span>平均反応</span><b class="big">${avg.toFixed(2)}<span style="font-size:16px">秒</span></b></div>
         <div><span>最大コンボ</span><b class="big">${maxCombo}</b></div>
         <div><span>ベスト</span><b class="big">${st.best}</b></div>
+      ${skipped ? `<div><span>スキップ</span><b class="big">${skipped}</b></div>` : ""}
       </div>
       ${log.filter(l => !l.ok).length ? `<h2 style="margin-top:20px">まちがえた問題</h2>
         <table><tr><th>機能</th><th>正解</th></tr>` +
@@ -635,7 +666,7 @@ let dragFrom = null;
 
 function mouseTarget(){
   const q = queue[qi];
-  return ($("#play").classList.contains("on") && q && q.type === "mouse" && !$("#verdict").textContent) ? q : null;
+  return ($("#play").classList.contains("on") && q && q.type === "mouse" && !inputLocked) ? q : null;
 }
 $("#play").addEventListener("contextmenu", e => e.preventDefault());   // ⌃+クリックのメニューを抑止
 $("#play").addEventListener("mousedown", e => {
@@ -657,7 +688,7 @@ $("#play").addEventListener("mousemove", e => {
 });
 $("#play").addEventListener("wheel", e => {
   const q = queue[qi];
-  if (!$("#play").classList.contains("on") || !q || !q.scroll || $("#verdict").textContent) return;
+  if (!$("#play").classList.contains("on") || !q || !q.scroll || inputLocked) return;
   const mods = modsOfMouse(e);
   if (!mods.length) return;               // 修飾キー無しの偶発的なスクロールは無視
   e.preventDefault();
@@ -680,7 +711,7 @@ document.addEventListener("keydown", ev => {
   document.querySelectorAll(".mod").forEach(m =>
     m.classList.toggle("on", {Command:ev.metaKey,Alt:ev.altKey,Control:ev.ctrlKey,Shift:ev.shiftKey}[m.dataset.m]));
   if (/^(Meta|Alt|Control|Shift)(Left|Right)$/.test(ev.code)) return;
-  if ($("#verdict").textContent) return;      // 判定表示中は受け付けない
+  if (inputLocked) return;
   judge(ev);
 }, true);
 document.addEventListener("keyup", () => {
