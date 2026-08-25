@@ -317,12 +317,29 @@ let queue = [], qi = 0, score = 0, combo = 0, maxCombo = 0, log = [], timer = nu
 let seqSteps = null, seqIdx = 0, curLimit = LIMIT, curAnswer = "";
 let inputLocked = false, answered = false, skipped = 0;
 
+/** event.code を、一覧と同じキー表記に直す */
+const CODE_LABEL = {
+  Minus:"−", Equal:"＝", BracketLeft:"[", BracketRight:"]", Backslash:"\\",
+  Semicolon:";", Quote:'"', Comma:"<", Period:">", Slash:"?", Backquote:"`",
+  ArrowUp:"↑", ArrowDown:"↓", ArrowLeft:"←", ArrowRight:"→",
+  Space:"space", Enter:"return", Tab:"tab", Escape:"esc",
+  Backspace:"delete", Delete:"delete", Home:"home", End:"end",
+  NumpadEnter:"テンキー Enter", NumpadAdd:"テンキー ＋", NumpadSubtract:"テンキー −",
+  NumpadEqual:"テンキー ＝", NumpadDivide:"テンキー /", NumpadMultiply:"テンキー ＊",
+  NumpadDecimal:"テンキー .",
+};
+function codeLabel(code){
+  if (!code) return "";
+  if (CODE_LABEL[code]) return CODE_LABEL[code];
+  if (/^Numpad\d$/.test(code)) return "テンキー" + code.slice(6);
+  return code.replace(/^(Key|Digit)/, "");
+}
 /** 押されたキーを「⇧ ＋ A」のような文字列にする */
 function pressedLabel(ev, tail){
   const sign = {Shift:"⇧", Control:"⌃", Alt:"⌥", Meta:"⌘"};
   const mods = ["Shift","Control","Alt","Meta"].filter(m => ({
     Shift:ev.shiftKey, Control:ev.ctrlKey, Alt:ev.altKey, Meta:ev.metaKey}[m]));
-  const main = tail || (ev.code || "").replace(/^(Key|Digit)/, "");
+  const main = tail || codeLabel(ev.code);
   return mods.map(m => sign[m]).concat(main ? [main] : []).join(" + ");
 }
 const modsOf = ev => {
