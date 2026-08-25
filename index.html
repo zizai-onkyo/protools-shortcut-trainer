@@ -33,7 +33,8 @@
   .k.ok{border-color:#4aa47f;color:var(--ok);background:#eaf6f1}
   .k.ng{border-color:#dda49c;color:var(--ng);background:#fdeeec}
   .answerline{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:8px}
-  .answerline .k{color:var(--ink)}
+  .answerline .k:not(.ok):not(.ng){color:var(--ink)}
+  .qk{display:inline-block;transform:translateY(.30em);line-height:1}
   .answerline .lbl{font-size:13px;font-weight:400;color:var(--soft)}
   /* ゲーム画面 */
   #play{display:none;position:fixed;inset:0;background:var(--bg);z-index:10;
@@ -468,7 +469,9 @@ function keyHTML(key, big, tone){
     if (!p.trim()) return "";
     const t = p.trim();
     const mouse = /クリック|ドラッグ/.test(t) ? " mouse" : "";
-    return `<span class="${cls}${mouse}">${glyphs(esc(t))}</span>`;
+    // 「"」は字面が上に寄るので、キーキャップの中央に見えるよう下げる
+    const body = (t === '"' || t === "'") ? `<span class="qk">${esc(t)}</span>` : glyphs(esc(t));
+    return `<span class="${cls}${mouse}">${body}</span>`;
   }).join("");
 }
 
