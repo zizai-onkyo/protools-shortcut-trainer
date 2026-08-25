@@ -30,6 +30,11 @@
   .sep{color:var(--soft)}
   .glyph{height:.92em;width:auto;display:inline-block;vertical-align:-.10em}
   .k.mouse{background:var(--accent-l);border-color:#8dbdb8;color:var(--accent);border-radius:999px}
+  .k.ok{border-color:#4aa47f;color:var(--ok);background:#eaf6f1}
+  .k.ng{border-color:#dda49c;color:var(--ng);background:#fdeeec}
+  .answerline{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:8px}
+  .answerline .k{color:var(--ink)}
+  .answerline .lbl{font-size:13px;font-weight:400;color:var(--soft)}
   /* ゲーム画面 */
   #play{display:none;position:fixed;inset:0;background:var(--bg);z-index:10;
     flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center}
@@ -311,6 +316,14 @@ let queue = [], qi = 0, score = 0, combo = 0, maxCombo = 0, log = [], timer = nu
 let seqSteps = null, seqIdx = 0, curLimit = LIMIT, curAnswer = "";
 let inputLocked = false, answered = false, skipped = 0;
 
+/** 押されたキーを「⇧ ＋ A」のような文字列にする */
+function pressedLabel(ev, tail){
+  const sign = {Shift:"⇧", Control:"⌃", Alt:"⌥", Meta:"⌘"};
+  const mods = ["Shift","Control","Alt","Meta"].filter(m => ({
+    Shift:ev.shiftKey, Control:ev.ctrlKey, Alt:ev.altKey, Meta:ev.metaKey}[m]));
+  const main = tail || (ev.code || "").replace(/^(Key|Digit)/, "");
+  return mods.map(m => sign[m]).concat(main ? [main] : []).join(" + ");
+}
 const modsOf = ev => {
   const m = [];
   if (ev.metaKey) m.push("Meta");
@@ -445,8 +458,8 @@ $("#skip").onclick = () => {
   inputLocked = true; qi++; next();
 };
 
-function keyHTML(key, big){
-  const cls = big ? "k big" : "k";
+function keyHTML(key, big, tone){
+  const cls = (big ? "k big" : "k") + (tone ? " " + tone : "");
   return key.split(/( \+ | \/ | → | ｜ )/).map(p => {
     if (p === " + ") return '<span class="sep">＋</span>';
     if (p === " / ") return '<span class="sep">/</span>';
@@ -542,9 +555,10 @@ function judge(ev){
     return settle(false);
   }
   if (!ev) return settle(false);
-  if (q.type === "mouse") return settle(false);     // マウス問題にキーで答えた
+  if (q.type === "mouse") return settle(false, pressedLabel(ev));   // マウス問題にキーで答えた
   const m = modsOf(ev).join("+");
-  settle(q.alts.some(a => m === [...a.mods].sort().join("+") && a.codes.includes(ev.code)));
+  settle(q.alts.some(a => m === [...a.mods].sort().join("+") && a.codes.includes(ev.code)),
+         pressedLabel(ev));
 }
 
 function retrySame(){
@@ -554,7 +568,7 @@ function retrySame(){
   if (q.type === "tc") renderTC(); else if (q.type === "seq") renderSlots();
 }
 
-function settle(ok){
+function settle(ok, pressed){
   const q = queue[qi];
   clearInterval(timer); clearTimeout(hintTimer);
   const ms = performance.now() - t0;
@@ -580,14 +594,16 @@ function settle(ok){
     const gained = first ? Math.round((100 + speed * 100) * Math.min(5, 1 + (combo - 1) * .2)) : 0;
     score += gained;
     $("#verdict").className = "verdict ok";
-    $("#verdict").innerHTML = first
+    $("#verdict").innerHTML = (first
       ? `正解　<span style="font-weight:400;font-size:15px">${(ms/1000).toFixed(2)} 秒　+${gained}</span>`
-      : `正解　<span style="font-weight:400;font-size:15px">（点数は最初の1回のみ）</span>`;
+      : `正解　<span style="font-weight:400;font-size:15px">（得点にはカウントされません）</span>`)
+      + (pressed ? `<div class="answerline">${keyHTML(pressed, true, "ok")}</div>` : "");
   } else {
     if (first) combo = 0;
     $("#verdict").className = "verdict ng";
     $("#verdict").innerHTML = (ms >= curLimit ? "時間切れ" : "ちがいます") +
-      `<div class="answer">${keyHTML(curAnswer, true)}</div>` +
+      (pressed ? `<div class="answerline">${keyHTML(pressed, true, "ng")}</div>` : "") +
+      `<div class="answerline"><span class="lbl">正解は</span>${keyHTML(curAnswer, true)}</div>` +
       (q.scroll && q.alts && q.alts.length
         ? `<div class="muted" style="margin-top:6px">${esc(scrollLabel(q))}　でも正解</div>` : "");
     if (seqSteps){ seqIdx = seqSteps.length; renderSlots(); }
@@ -674,8 +690,8 @@ $("#play").addEventListener("mousedown", e => {
   if (!q || e.target.closest("button")) return;
   e.preventDefault();
   const ok = modsOfMouse(e).join("+") === [...q.mods].sort().join("+");
-  if (q.action === "click"){ settle(ok); return; }
-  if (!ok){ settle(false); return; }
+  if (q.action === "click"){ settle(ok, pressedLabel(e, "クリック")); return; }
+  if (!ok){ settle(false, pressedLabel(e, "ドラッグ")); return; }
   dragFrom = {x: e.clientX, y: e.clientY};
 });
 $("#play").addEventListener("mousemove", e => {
