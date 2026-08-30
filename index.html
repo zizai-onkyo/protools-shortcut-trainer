@@ -84,6 +84,19 @@
   .big{font-size:40px;font-weight:700}
   .stat{display:flex;gap:26px;flex-wrap:wrap;margin:6px 0 4px}
   .stat div span{display:block;color:var(--soft);font-size:12px}
+  .heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,13px);gap:3px;
+    overflow-x:auto;padding-bottom:4px;margin-top:4px}
+  .heat i{display:block;width:13px;height:13px;border-radius:3px;background:#eceeee}
+  .heat i.l1{background:#cfe6e1} .heat i.l2{background:#9ad0c8}
+  .heat i.l3{background:#4ea99d} .heat i.l4{background:var(--accent)}
+  .heat i.today{box-shadow:0 0 0 1.5px var(--gold)}
+  .heatlabel{display:flex;gap:5px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--soft);margin-top:10px}
+  .heatlabel i{display:inline-block;width:11px;height:11px;border-radius:3px}
+  .kpi{display:flex;gap:26px;flex-wrap:wrap;margin:2px 0 16px}
+  .kpi div span{display:block;color:var(--soft);font-size:12px}
+  .kpi div b{font-size:26px;font-variant-numeric:tabular-nums}
+  .chart{width:100%;height:170px;display:block}
+  .chartax{display:flex;justify-content:space-between;font-size:12px;color:var(--soft);margin-top:-6px}
   .chk{font-size:13px;padding:3px 9px;border-radius:999px;display:inline-block}
   .banner{border-radius:12px;padding:16px 20px;margin-bottom:16px;font-size:14px;line-height:1.8}
   .banner.warn{background:#fdf4e6;border:1px solid #ecd3a6;color:#8a5a12}
@@ -127,6 +140,7 @@
 
   <div id="resultbox" style="display:none;margin-top:22px"></div>
   <div id="weakbox" style="display:none;margin-top:14px"></div>
+  <div id="stats" style="display:none;margin-top:14px"></div>
 </div>
 
 <div id="play">
@@ -304,6 +318,7 @@ function updatePool(){
   $("#poolinfo").textContent = txt;
 }
 updatePool();
+renderHistory();
 $("#hasnumpad").onchange = updatePool;
 $("#weighted").onchange = updatePool;
 $("#nocmd").onchange = updatePool;
@@ -641,6 +656,86 @@ function settle(ok, pressed){
   }
 }
 
+/* ---------- 練習の記録 ---------- */
+function dayKey(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+function renderHistory(){
+  const st = store();
+  const hist = (st.history || []).slice();
+  if (!hist.length){ $("#stats").style.display = "none"; return; }
+  $("#stats").style.display = "";
+
+  const byDay = {};
+  hist.forEach(h => { byDay[h.d] = (byDay[h.d] || 0) + 1; });
+
+  // 直近 20 週ぶんのマス目（日曜はじまり）
+  const WEEKS = 20;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const end = new Date(today); end.setDate(end.getDate() + (6 - end.getDay()));
+  const start = new Date(end); start.setDate(start.getDate() - (WEEKS*7 - 1));
+  const level = n => n >= 6 ? 4 : n >= 4 ? 3 : n >= 2 ? 2 : n >= 1 ? 1 : 0;
+  let cells = "";
+  for (let t = new Date(start); t <= end; t.setDate(t.getDate()+1)){
+    const k = dayKey(t), n = byDay[k] || 0;
+    const future = t > today;
+    cells += `<i class="${future ? "" : "l" + level(n)}${k === dayKey(today) ? " today" : ""}"`
+           + ` title="${k}　${n ? n + " ラウンド" : "練習なし"}"></i>`;
+  }
+
+  // 連続日数
+  let streak = 0;
+  const cur = new Date(today);
+  if (!byDay[dayKey(cur)]) cur.setDate(cur.getDate() - 1);      // 今日まだなら昨日から
+  while (byDay[dayKey(cur)]){ streak++; cur.setDate(cur.getDate() - 1); }
+
+  const days = Object.keys(byDay).length;
+  const scored = hist.filter(h => !h.memo && typeof h.s === "number");
+  const totalQ = hist.reduce((a,h) => a + (h.t || 0), 0);
+  const totalC = scored.reduce((a,h) => a + (h.c || 0), 0);
+  const totalT = scored.reduce((a,h) => a + (h.t || 0), 0);
+  const acc = totalT ? Math.round(totalC / totalT * 100) : 0;
+
+  // スコアの推移（直近 30 ラウンド）
+  const pts = scored.slice(-30);
+  let chart = '<div class="muted">スコアの記録がまだありません</div>';
+  if (pts.length >= 2){
+    const W = 600, H = 170, PAD = 26;
+    const max = Math.max(...pts.map(p => p.s)), min = Math.min(...pts.map(p => p.s));
+    const span = Math.max(1, max - min);
+    const x = i => PAD + i * (W - PAD*2) / (pts.length - 1);
+    const y = v => H - PAD - (v - min) / span * (H - PAD*2);
+    const line = pts.map((p,i) => `${x(i).toFixed(1)},${y(p.s).toFixed(1)}`).join(" ");
+    chart = `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <polygon points="${PAD},${H-PAD} ${line} ${W-PAD},${H-PAD}" fill="var(--accent-l)"></polygon>
+      <polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5"
+        stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>
+      ${pts.map((p,i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.s).toFixed(1)}" r="3.5" fill="var(--accent)">
+        <title>${p.s} 点（${p.d}）</title></circle>`).join("")}
+    </svg>
+    <div class="chartax"><span>最高 ${max}</span><span>最低 ${min}</span></div>`;
+  }
+
+  $("#stats").innerHTML = `<div class="card">
+    <h2>練習の記録</h2>
+    <div class="kpi">
+      <div><span>練習した日</span><b>${days}<span style="font-size:14px">日</span></b></div>
+      <div><span>連続</span><b>${streak}<span style="font-size:14px">日</span></b></div>
+      <div><span>ラウンド</span><b>${hist.length}</b></div>
+      <div><span>解いた問題</span><b>${totalQ}</b></div>
+      <div><span>正解率</span><b>${acc}<span style="font-size:14px">%</span></b></div>
+    </div>
+    <div class="heat">${cells}</div>
+    <div class="heatlabel">少ない
+      <i style="background:#eceeee"></i><i style="background:#cfe6e1"></i><i style="background:#9ad0c8"></i>
+      <i style="background:#4ea99d"></i><i style="background:var(--accent)"></i> 多い
+      <span style="margin-left:8px">直近20週／マスにカーソルを合わせると日付が出ます</span></div>
+    <h2 style="margin-top:22px">スコアの推移${pts.length >= 2 ? `（直近 ${pts.length} ラウンド）` : ""}</h2>
+    ${chart}
+  </div>`;
+}
+
 function endGame(aborted){
   clearInterval(timer); clearTimeout(hintTimer);
   if (locked && navigator.keyboard) navigator.keyboard.unlock();
@@ -648,6 +743,12 @@ function endGame(aborted){
   if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
   $("#play").classList.remove("on");
   if (memo()){
+    const stm = store(); stm.history = stm.history || [];
+    const nw = new Date();
+    stm.history.push({d: `${nw.getFullYear()}-${String(nw.getMonth()+1).padStart(2,"0")}-${String(nw.getDate()).padStart(2,"0")}`,
+                      ts: nw.getTime(), memo: true, t: qi});
+    saveStore(stm);
+    renderHistory();
     $("#resultbox").style.display = "";
     $("#resultbox").innerHTML = `<div class="card"><h2>暗記モード終了</h2>
       <div class="muted">${qi} 問ぶん練習しました。スコアと苦手記録は残していません。</div></div>`;
@@ -656,11 +757,15 @@ function endGame(aborted){
     return;
   }
   if (!log.length) return;
-  const st = store(); st.miss = st.miss || {};
+  const st = store(); st.miss = st.miss || {}; st.history = st.history || [];
   log.forEach(l => { if (!l.ok) st.miss[l.q.act] = (st.miss[l.q.act] || 0) + 1;
                      else if (st.miss[l.q.act]) st.miss[l.q.act]--; });
   const oks = log.filter(l => l.ok);
   st.best = Math.max(st.best || 0, score);
+  const now = new Date();
+  const day = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+  st.history.push({d: day, ts: now.getTime(), s: score, c: oks.length, t: log.length});
+  if (st.history.length > 500) st.history = st.history.slice(-500);
   saveStore(st);
   const avg = oks.length ? oks.reduce((a,l) => a + l.ms, 0) / oks.length / 1000 : 0;
   $("#resultbox").style.display = "";
@@ -687,6 +792,7 @@ function endGame(aborted){
     <table><tr><th>機能</th><th>ミス</th></tr>` +
     miss.slice(0,15).map(([a,v]) => `<tr><td>${esc(a)}</td><td>${v}</td></tr>`).join("") + `</table></div>` : "";
   updatePool();
+  renderHistory();
   window.scrollTo(0, document.body.scrollHeight);
 }
 
